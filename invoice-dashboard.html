@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eligens — Invoices</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ── TOKENS ── */
 :root{
@@ -386,6 +387,9 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
     </div>
     <div class="nav-right">
       <span class="session-bar" id="sessionTimer">⏱ 8h 00m</span>
+      <button id="navDriveBtn" onclick="driveSync()" title="Sync to Google Drive" style="display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;display:none;align-items:center;gap:5px">
+        <span id="navDriveIcon">☁️</span> <span id="navDriveLabel">Drive</span>
+      </button>
       <span class="nav-user" id="navUser"></span>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
     </div>
@@ -546,10 +550,47 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
         <div id="catAddError" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
       </div>
 
-      <!-- Backup & Restore -->
+      <!-- Google Drive Sync -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)" id="driveSection">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">☁️ Google Drive Sync</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Saves your invoices to <strong>eligens-backup.json</strong> in your Google Drive. Sign in once — then sync with one click anytime.</div>
+
+        <!-- Step 1: Client ID input (shown until configured) -->
+        <div id="driveSetup">
+          <div style="background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-bottom:14px;line-height:1.6">
+            <strong>One-time setup:</strong> You need a Google OAuth Client ID.<br>
+            1. Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a> → New Project<br>
+            2. APIs & Services → Enable <strong>Google Drive API</strong><br>
+            3. OAuth consent screen → External → add your email<br>
+            4. Credentials → OAuth 2.0 Client ID → Web app → add <strong id="driveOriginHint"></strong> to Authorized JS origins<br>
+            5. Copy the Client ID and paste below
+          </div>
+          <div class="fg">
+            <label>Google OAuth Client ID</label>
+            <input class="fc" id="driveClientId" type="text" placeholder="xxxxxxx.apps.googleusercontent.com" style="font-family:var(--mono);font-size:11px">
+          </div>
+          <button class="btn btn-primary" onclick="saveDriveClientId()" style="width:100%;justify-content:center">Save & Connect Google Drive</button>
+        </div>
+
+        <!-- Drive controls (shown after Client ID saved) -->
+        <div id="driveControls" style="display:none">
+          <div id="driveStatus" style="font-size:12px;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+            <span id="driveStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0"></span>
+            <span id="driveStatusText">Not signed in</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="driveSyncBtn" onclick="driveSync()" style="flex:2;justify-content:center">☁️ Sync to Drive</button>
+            <button class="btn btn-ghost" id="driveSignOutBtn" onclick="driveSignOut()" style="flex:1;justify-content:center;display:none">Sign Out</button>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:8px" id="driveLastSync"></div>
+          <button onclick="resetDriveSetup()" style="background:none;border:none;font-size:10px;color:var(--text3);cursor:pointer;margin-top:6px;padding:0;text-decoration:underline">Change Client ID</button>
+        </div>
+      </div>
+
+      <!-- Local Backup & Restore -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
-        <div style="font-size:15px;font-weight:700;margin-bottom:4px">💾 Backup & Restore</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Export all your data as a JSON backup file. Import it any time to restore — even after uploading a new version of this file.</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">💾 Local Backup & Restore</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Download a local JSON backup or restore from a previous one.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="btn btn-primary" onclick="exportBackup()" style="flex:1;justify-content:center;min-width:140px">⬇ Export Backup</button>
           <label class="btn btn-ghost" style="flex:1;justify-content:center;min-width:140px;cursor:pointer">
@@ -748,6 +789,8 @@ function enterApp(username){
   document.getElementById('navUser').textContent=username;
   startSessionTimer();
   initApp();
+  // Init Drive after a short delay to let Google GSI load
+  setTimeout(initDriveUI, 800);
 }
 
 function doLogout(){
@@ -936,7 +979,11 @@ function initApp(){
   renderAll();
 }
 
-function save(){localStorage.setItem('eligens_inv',JSON.stringify(invoices));}
+function save(){
+  localStorage.setItem('eligens_inv',JSON.stringify(invoices));
+  // Silent background sync to Drive if already authenticated
+  if(driveAccessToken){ driveSync().catch(()=>{}); }
+}
 
 // NAV
 function showPage(name,btn){
@@ -1393,6 +1440,238 @@ function acKeydown(e){
 function acHighlight(items){
   items.forEach((el,i)=> el.classList.toggle('focused', i===acFocusIdx));
   if(acFocusIdx>=0) items[acFocusIdx].scrollIntoView({block:'nearest'});
+}
+
+
+// ══════════════════════════════════════════
+// GOOGLE DRIVE SYNC
+// ══════════════════════════════════════════
+const DRIVE_FILE_NAME = 'eligens-backup.json';
+const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+let driveAccessToken = null;
+let driveFileId = null; // cached file ID once found/created
+
+function initDriveUI(){
+  // Show origin hint
+  const hint = document.getElementById('driveOriginHint');
+  if(hint) hint.textContent = window.location.origin;
+
+  const clientId = localStorage.getItem('drive_client_id');
+  if(clientId){
+    document.getElementById('driveSetup').style.display = 'none';
+    document.getElementById('driveControls').style.display = 'block';
+    document.getElementById('driveClientId').value = clientId;
+    // Show nav Drive button
+    const navBtn = document.getElementById('navDriveBtn');
+    if(navBtn){ navBtn.style.display='flex'; }
+    // Try silent sign-in
+    driveSilentSignIn(clientId);
+  }
+}
+
+function saveDriveClientId(){
+  const id = document.getElementById('driveClientId').value.trim();
+  if(!id || !id.includes('.apps.googleusercontent.com')){
+    toast('⚠️ Paste a valid Client ID ending in .apps.googleusercontent.com');
+    return;
+  }
+  localStorage.setItem('drive_client_id', id);
+  document.getElementById('driveSetup').style.display = 'none';
+  document.getElementById('driveControls').style.display = 'block';
+  const navBtn = document.getElementById('navDriveBtn');
+  if(navBtn){ navBtn.style.display='flex'; }
+  toast('✅ Client ID saved — click "Sync to Drive" to sign in');
+}
+
+function resetDriveSetup(){
+  localStorage.removeItem('drive_client_id');
+  localStorage.removeItem('drive_file_id');
+  driveAccessToken = null;
+  driveFileId = null;
+  document.getElementById('driveSetup').style.display = 'block';
+  document.getElementById('driveControls').style.display = 'none';
+  document.getElementById('navDriveBtn').style.display = 'none';
+  setDriveStatus('idle');
+}
+
+function setDriveStatus(state, extra){
+  const dot = document.getElementById('driveStatusDot');
+  const text = document.getElementById('driveStatusText');
+  const signOutBtn = document.getElementById('driveSignOutBtn');
+  const syncBtn = document.getElementById('driveSyncBtn');
+  const navLabel = document.getElementById('navDriveLabel');
+  if(!dot) return;
+  const states = {
+    idle:    {color:'var(--border)',   msg:'Not signed in',        nav:'Drive'},
+    signing: {color:'var(--accent2)',  msg:'Signing in…',          nav:'Signing in…'},
+    ready:   {color:'var(--accent)',   msg:'Signed in ✓',          nav:'Sync'},
+    syncing: {color:'var(--accent2)',  msg:'Syncing…',             nav:'Syncing…'},
+    done:    {color:'var(--accent)',   msg:'Synced ✓ '+( extra||''), nav:'✓ Synced'},
+    error:   {color:'var(--red)',      msg:'Error: '+(extra||'?'), nav:'Drive'},
+  };
+  const s = states[state] || states.idle;
+  dot.style.background = s.color;
+  text.textContent = s.msg;
+  if(navLabel) navLabel.textContent = s.nav;
+  if(signOutBtn) signOutBtn.style.display = (state==='ready'||state==='done') ? 'flex' : 'none';
+  if(syncBtn) syncBtn.disabled = (state==='syncing'||state==='signing');
+}
+
+function driveSilentSignIn(clientId){
+  // Google Identity Services — try to get token without prompt
+  if(!window.google?.accounts?.oauth2) return;
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: DRIVE_SCOPES,
+    prompt: '',
+    callback: (resp) => {
+      if(resp.access_token){
+        driveAccessToken = resp.access_token;
+        setDriveStatus('ready');
+        driveFileId = localStorage.getItem('drive_file_id') || null;
+      }
+    }
+  });
+  client.requestAccessToken({prompt: ''});
+}
+
+async function driveSignIn(){
+  return new Promise((resolve, reject) => {
+    const clientId = localStorage.getItem('drive_client_id');
+    if(!clientId){ reject('No client ID'); return; }
+    if(!window.google?.accounts?.oauth2){ reject('Google API not loaded'); return; }
+    setDriveStatus('signing');
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: clientId,
+      scope: DRIVE_SCOPES,
+      callback: (resp) => {
+        if(resp.error){ reject(resp.error); return; }
+        driveAccessToken = resp.access_token;
+        setDriveStatus('ready');
+        resolve(resp.access_token);
+      }
+    });
+    client.requestAccessToken({prompt: 'consent'});
+  });
+}
+
+function driveSignOut(){
+  if(driveAccessToken && window.google?.accounts?.oauth2){
+    google.accounts.oauth2.revoke(driveAccessToken, ()=>{});
+  }
+  driveAccessToken = null;
+  driveFileId = null;
+  localStorage.removeItem('drive_file_id');
+  setDriveStatus('idle');
+  toast('Signed out of Google Drive');
+}
+
+async function driveSync(){
+  try {
+    setDriveStatus('syncing');
+    // Ensure we have a token
+    if(!driveAccessToken){
+      await driveSignIn();
+    }
+    // Build payload
+    const payload = JSON.stringify({
+      version: 2,
+      exported: new Date().toISOString(),
+      invoices: invoices,
+      vendors: getVendorRegistry(),
+      categories: getCategories()
+    }, null, 2);
+
+    const blob = new Blob([payload], {type:'application/json'});
+
+    // Check if we already have a file ID cached
+    if(!driveFileId){
+      driveFileId = localStorage.getItem('drive_file_id');
+    }
+
+    // If we have a file ID, try to update it; otherwise search first
+    if(!driveFileId){
+      driveFileId = await driveFindFile();
+    }
+
+    if(driveFileId){
+      await driveUpdateFile(driveFileId, blob);
+    } else {
+      driveFileId = await driveCreateFile(blob);
+      localStorage.setItem('drive_file_id', driveFileId);
+    }
+
+    const now = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+    setDriveStatus('done', 'at '+now);
+    document.getElementById('driveLastSync').textContent = 'Last synced: ' + new Date().toLocaleString('en-GB');
+    toast('☁️ Synced to Google Drive successfully');
+
+  } catch(err){
+    console.error('Drive sync error:', err);
+    // Token expired — clear and retry once
+    if(String(err).includes('401') || String(err).includes('invalid_token')){
+      driveAccessToken = null;
+      setDriveStatus('idle');
+      toast('⚠️ Session expired — click Sync again to re-authenticate');
+    } else {
+      setDriveStatus('error', String(err).substring(0,40));
+      toast('❌ Drive sync failed: ' + String(err).substring(0,60));
+    }
+  }
+}
+
+async function driveFindFile(){
+  const name = encodeURIComponent(DRIVE_FILE_NAME);
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'+and+trashed=false&fields=files(id,name)`,
+    {headers: {Authorization: 'Bearer '+driveAccessToken}}
+  );
+  if(!r.ok) throw new Error(r.status);
+  const data = await r.json();
+  return data.files?.[0]?.id || null;
+}
+
+async function driveCreateFile(blob){
+  // Multipart upload: metadata + content
+  const meta = JSON.stringify({name: DRIVE_FILE_NAME, mimeType: 'application/json'});
+  const body = new FormData();
+  body.append('metadata', new Blob([meta], {type:'application/json'}));
+  body.append('file', blob);
+  const r = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    {method:'POST', headers:{Authorization:'Bearer '+driveAccessToken}, body}
+  );
+  if(!r.ok) throw new Error(r.status);
+  const data = await r.json();
+  return data.id;
+}
+
+async function driveUpdateFile(fileId, blob){
+  const r = await fetch(
+    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+    {method:'PATCH', headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'}, body:blob}
+  );
+  if(r.status===404){
+    // File was deleted — create new one
+    localStorage.removeItem('drive_file_id');
+    driveFileId = null;
+    const newId = await driveCreateFile(blob);
+    localStorage.setItem('drive_file_id', newId);
+    driveFileId = newId;
+    return;
+  }
+  if(!r.ok) throw new Error(r.status);
+}
+
+// Also auto-sync to Drive whenever data is saved (if signed in)
+const _origSave = typeof save === 'function' ? save : null;
+function saveAndSync(){
+  localStorage.setItem('eligens_inv', JSON.stringify(invoices));
+  // Auto-sync only if already authenticated (no popup)
+  if(driveAccessToken){
+    driveSync().catch(()=>{}); // silent background sync
+  }
 }
 
 // ══════════════════════════════════════════
