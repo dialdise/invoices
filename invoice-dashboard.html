@@ -3,989 +3,1189 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invoice Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<title>Eligens — Invoice Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0f14;
-    --surface: #13161e;
-    --surface2: #1a1e2a;
-    --border: #252a38;
-    --accent: #4fffb0;
-    --accent2: #4f9fff;
-    --accent3: #ff6b6b;
-    --accent4: #ffd166;
-    --text: #e8ecf4;
-    --text2: #8892a4;
-    --text3: #535d72;
-    --radius: 12px;
-    --mono: 'DM Mono', monospace;
-    --sans: 'Sora', sans-serif;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* Layout */
-  .layout { display: flex; height: 100vh; }
-
-  /* Sidebar */
-  .sidebar {
-    width: 64px;
-    background: var(--surface);
-    border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 0;
-    gap: 8px;
-    position: fixed;
-    height: 100vh;
-    z-index: 10;
-  }
-
-  .logo {
-    width: 36px; height: 36px;
-    background: var(--accent);
-    border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    margin-bottom: 24px;
-  }
-
-  .logo svg { width: 20px; height: 20px; }
-
-  .nav-btn {
-    width: 40px; height: 40px;
-    border-radius: 10px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
-    color: var(--text3);
-  }
-
-  .nav-btn:hover, .nav-btn.active {
-    background: var(--surface2);
-    color: var(--accent);
-  }
-
-  /* Main */
-  .main {
-    margin-left: 64px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* Header */
-  .header {
-    padding: 20px 32px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--surface);
-  }
-
-  .header-left h1 {
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-  }
-
-  .header-left p { font-size: 12px; color: var(--text2); margin-top: 2px; }
-
-  .header-actions { display: flex; gap: 10px; align-items: center; }
-
-  .btn {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
-    transition: all 0.15s;
-    display: flex; align-items: center; gap: 6px;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: #0d0f14;
-  }
-
-  .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-
-  .btn-ghost {
-    background: var(--surface2);
-    color: var(--text);
-    border: 1px solid var(--border);
-  }
-
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-  /* Content */
-  .content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 28px 32px;
-  }
-
-  /* Stats row */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 28px;
-  }
-
-  .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    transition: border-color 0.2s;
-  }
-
-  .stat-card:hover { border-color: var(--accent); }
-
-  .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
-
-  .stat-value {
-    font-size: 26px;
-    font-weight: 700;
-    font-family: var(--mono);
-    letter-spacing: -1px;
-  }
-
-  .stat-value.green { color: var(--accent); }
-  .stat-value.blue { color: var(--accent2); }
-  .stat-value.red { color: var(--accent3); }
-  .stat-value.yellow { color: var(--accent4); }
-
-  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
-
-  /* Two-panel layout */
-  .panels { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
-
-  /* Table panel */
-  .panel {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-  }
-
-  .panel-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between;
-  }
-
-  .panel-title { font-size: 13px; font-weight: 600; }
-
-  .search-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
-    width: 200px;
-  }
-
-  .search-bar input {
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 12px;
-    width: 100%;
-  }
-
-  .search-bar input::placeholder { color: var(--text3); }
-
-  table { width: 100%; border-collapse: collapse; }
-
-  thead th {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--text3);
-    padding: 10px 20px;
-    text-align: left;
-    border-bottom: 1px solid var(--border);
-    font-weight: 500;
-  }
-
-  tbody tr {
-    border-bottom: 1px solid var(--border);
-    transition: background 0.12s;
-    cursor: pointer;
-  }
-
-  tbody tr:last-child { border-bottom: none; }
-  tbody tr:hover { background: var(--surface2); }
-  tbody tr.selected { background: rgba(79, 255, 176, 0.04); border-left: 3px solid var(--accent); }
-
-  td {
-    padding: 12px 20px;
-    font-size: 13px;
-    color: var(--text2);
-  }
-
-  td.primary { color: var(--text); font-weight: 500; font-family: var(--mono); }
-  td.amount { font-family: var(--mono); font-weight: 600; color: var(--text); }
-
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .badge-paid { background: rgba(79,255,176,0.1); color: var(--accent); }
-  .badge-pending { background: rgba(255,209,102,0.1); color: var(--accent4); }
-  .badge-overdue { background: rgba(255,107,107,0.1); color: var(--accent3); }
-
-  .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-
-  /* Right panel - Add form */
-  .add-panel { display: flex; flex-direction: column; gap: 16px; }
-
-  .form-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-
-  .form-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 16px; }
-
-  .form-group { margin-bottom: 12px; }
-
-  .form-group label {
-    display: block;
-    font-size: 11px;
-    color: var(--text2);
-    margin-bottom: 5px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .form-control {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 13px;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  .form-control:focus { border-color: var(--accent); }
-  .form-control::placeholder { color: var(--text3); }
-
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-  /* Upload area */
-  .upload-zone {
-    border: 1.5px dashed var(--border);
-    border-radius: 10px;
-    padding: 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: var(--surface2);
-  }
-
-  .upload-zone:hover, .upload-zone.dragover {
-    border-color: var(--accent);
-    background: rgba(79,255,176,0.04);
-  }
-
-  .upload-icon { font-size: 28px; margin-bottom: 8px; }
-  .upload-text { font-size: 12px; color: var(--text2); }
-  .upload-text span { color: var(--accent); }
-  .upload-file-name { font-size: 11px; color: var(--accent); margin-top: 6px; font-family: var(--mono); }
-
-  #fileInput { display: none; }
-
-  /* Email section */
-  .email-section {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-  }
-
-  .email-section h3 { font-size: 13px; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
-
-  .accountant-pill {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 12px;
-  }
-
-  .avatar {
-    width: 28px; height: 28px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent2), var(--accent));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-    color: #0d0f14;
-  }
-
-  .accountant-info { flex: 1; }
-  .accountant-name { font-size: 12px; font-weight: 600; }
-  .accountant-email { font-size: 10px; color: var(--text3); font-family: var(--mono); }
-
-  .btn-email {
-    width: 100%;
-    background: linear-gradient(135deg, #1a2e45, #13283d);
-    border: 1px solid var(--accent2);
-    color: var(--accent2);
-    padding: 11px;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-family: var(--sans);
-    transition: all 0.15s;
-  }
-
-  .btn-email:hover {
-    background: var(--accent2);
-    color: #0d0f14;
-    transform: translateY(-1px);
-  }
-
-  /* Modal */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 100;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.2s;
-    backdrop-filter: blur(4px);
-  }
-
-  .modal-overlay.open { opacity: 1; pointer-events: all; }
-
-  .modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px;
-    width: 420px;
-    max-width: 90vw;
-    transform: translateY(10px);
-    transition: transform 0.2s;
-  }
-
-  .modal-overlay.open .modal { transform: translateY(0); }
-
-  .modal h2 { font-size: 16px; margin-bottom: 6px; }
-  .modal p { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
-
-  .invoice-preview {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
-    margin-bottom: 16px;
-    font-family: var(--mono);
-    font-size: 12px;
-  }
-
-  .inv-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-  .inv-row:last-child { margin-bottom: 0; border-top: 1px solid var(--border); padding-top: 6px; }
-  .inv-label { color: var(--text3); }
-  .inv-val { color: var(--text); }
-
-  .modal-actions { display: flex; gap: 10px; }
-  .modal-actions .btn { flex: 1; justify-content: center; }
-
-  .btn-cancel { background: var(--surface2); border: 1px solid var(--border); color: var(--text2); }
-
-  /* Toast */
-  .toast {
-    position: fixed;
-    bottom: 24px; right: 24px;
-    background: var(--surface);
-    border: 1px solid var(--accent);
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-size: 13px;
-    display: flex; align-items: center; gap: 10px;
-    z-index: 200;
-    transform: translateY(80px);
-    opacity: 0;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .toast.show { transform: translateY(0); opacity: 1; }
-
-  .empty-state {
-    padding: 48px 20px;
-    text-align: center;
-    color: var(--text3);
-    font-size: 13px;
-  }
-
-  /* scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-  @media (max-width: 900px) {
-    .panels { grid-template-columns: 1fr; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
-  }
+:root {
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--border:#e2e0d8;
+  --accent:#1a472a;--accent-light:#e8f0eb;--accent2:#c8973a;--accent2-light:#fdf3e3;
+  --red:#c0392b;--red-light:#fdecea;--blue:#1a3a5c;--blue-light:#e8eef5;
+  --text:#1a1a18;--text2:#6b6a64;--text3:#a8a69e;
+  --mono:'IBM Plex Mono',monospace;--sans:'Plus Jakarta Sans',sans-serif;
+  --r:10px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+
+/* NAV */
+.topnav{background:var(--accent);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:50}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:28px;height:28px;background:var(--accent2);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.brand-name{color:#fff;font-weight:700;font-size:15px;letter-spacing:-.3px}
+.brand-sub{color:rgba(255,255,255,.5);font-size:11px;margin-left:4px}
+.nav-tabs{display:flex;gap:2px}
+.nav-tab{padding:6px 14px;border-radius:6px;border:none;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:600;background:transparent;color:rgba(255,255,255,.6);transition:all .15s}
+.nav-tab.active,.nav-tab:hover{background:rgba(255,255,255,.12);color:#fff}
+.nav-right{color:rgba(255,255,255,.6);font-size:12px;display:flex;align-items:center;gap:12px}
+
+/* PAGES */
+.page{display:none;padding:24px 28px;max-width:1400px;margin:0 auto}
+.page.active{display:block}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:22px}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow)}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);font-weight:600;margin-bottom:6px}
+.stat-val{font-size:22px;font-weight:700;font-family:var(--mono);letter-spacing:-.5px}
+.stat-val.g{color:var(--accent)}.stat-val.r{color:var(--red)}.stat-val.o{color:var(--accent2)}.stat-val.b{color:var(--blue)}
+.stat-sub{font-size:11px;color:var(--text3);margin-top:3px}
+
+/* TOOLBAR */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 12px;min-width:200px}
+.search input{border:none;outline:none;font-family:var(--sans);font-size:13px;background:none;color:var(--text);width:100%}
+.search input::placeholder{color:var(--text3)}
+select.filter{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-family:var(--sans);font-size:12px;color:var(--text2);outline:none;cursor:pointer}
+.spacer{flex:1}
+.btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:8px;border:none;cursor:pointer;font-family:var(--sans);font-size:12px;font-weight:600;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{filter:brightness(1.15)}
+.btn-ghost{background:var(--surface);border:1px solid var(--border);color:var(--text2)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-amber{background:var(--accent2);color:#fff}.btn-amber:hover{filter:brightness(1.1)}
+.btn-ai{background:linear-gradient(135deg,#1a472a,#2d7a4f);color:#fff;border:1px solid rgba(255,255,255,.15)}.btn-ai:hover{filter:brightness(1.15)}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead th{font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);background:var(--surface2);font-weight:600;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+td{padding:10px 14px;font-size:12px;color:var(--text2);vertical-align:middle}
+td.bold{color:var(--text);font-weight:600;font-family:var(--mono);font-size:11px}
+td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
+
+.prio{display:inline-block;padding:2px 7px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.prio-H{background:#fdecea;color:var(--red)}
+.prio-M{background:var(--accent2-light);color:var(--accent2)}
+.prio-URGENT{background:#fdecea;color:var(--red);border:1px solid var(--red);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase}
+.badge-paid{background:var(--accent-light);color:var(--accent)}
+.badge-unpaid{background:var(--accent2-light);color:var(--accent2)}
+.badge-overdue{background:var(--red-light);color:var(--red)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.cat{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--blue-light);color:var(--blue)}
+
+.act-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:var(--text3);font-size:13px;transition:all .12s}
+.act-btn:hover{background:var(--surface2);color:var(--accent)}
+.act-btn.del:hover{color:var(--red)}
+
+/* ═══════════════════════════════
+   AI SCAN PAGE
+═══════════════════════════════ */
+.scan-hero{
+  background:linear-gradient(135deg,var(--accent) 0%,#2d5a3d 100%);
+  border-radius:14px;padding:32px;margin-bottom:24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:relative;overflow:hidden;
+}
+.scan-hero::before{
+  content:'';position:absolute;right:-40px;top:-40px;
+  width:220px;height:220px;border-radius:50%;
+  background:rgba(255,255,255,.04);
+}
+.scan-hero::after{
+  content:'';position:absolute;right:60px;bottom:-60px;
+  width:160px;height:160px;border-radius:50%;
+  background:rgba(255,255,255,.03);
+}
+.scan-hero-text h2{color:#fff;font-size:22px;font-weight:700;margin-bottom:6px}
+.scan-hero-text p{color:rgba(255,255,255,.7);font-size:13px;max-width:460px;line-height:1.6}
+.scan-hero-badge{
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;padding:12px 18px;text-align:center;z-index:1;
+  backdrop-filter:blur(8px);
+}
+.scan-hero-badge .big{color:#fff;font-size:28px;font-weight:800;font-family:var(--mono)}
+.scan-hero-badge small{color:rgba(255,255,255,.6);font-size:10px;display:block;margin-top:2px}
+
+/* Drop zone */
+.drop-zone{
+  border:2px dashed var(--border);border-radius:14px;
+  padding:52px 32px;text-align:center;cursor:pointer;
+  transition:all .25s;background:var(--surface);
+  position:relative;
+}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:var(--accent-light)}
+.drop-zone.has-file{border-color:var(--accent);border-style:solid;background:var(--accent-light)}
+.dz-icon{font-size:48px;margin-bottom:14px;display:block}
+.dz-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px}
+.dz-sub{font-size:13px;color:var(--text2)}
+.dz-sub span{color:var(--accent);font-weight:600}
+.dz-types{display:flex;gap:8px;justify-content:center;margin-top:14px}
+.dz-type{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--text3);font-family:var(--mono)}
+#scanFileInput{display:none}
+
+/* Scan panels layout */
+.scan-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+
+/* Preview pane */
+.preview-pane{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--shadow);
+}
+.pane-header{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  background:var(--surface2);display:flex;align-items:center;justify-content:space-between;
+}
+.pane-title{font-size:12px;font-weight:700;color:var(--text)}
+.pane-body{padding:0}
+#invoicePreviewImg{width:100%;max-height:520px;object-fit:contain;display:block;background:#f8f7f5}
+#invoicePreviewPdf{width:100%;height:520px;border:none;display:block}
+
+/* Form pane */
+.form-pane{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;box-shadow:var(--shadow);
+}
+
+/* AI scanning animation */
+.scan-loading{
+  padding:48px 32px;text-align:center;display:none;
+}
+.scan-spinner{
+  width:52px;height:52px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;margin:0 auto 18px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.scan-loading-text{font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px}
+.scan-loading-sub{font-size:12px;color:var(--text2)}
+.scan-steps{margin-top:18px;display:flex;flex-direction:column;gap:6px;text-align:left;max-width:260px;margin-left:auto;margin-right:auto}
+.scan-step{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)}
+.scan-step.done{color:var(--accent)}.scan-step.active{color:var(--text);font-weight:600}
+.scan-step-icon{width:16px;text-align:center;flex-shrink:0}
+
+/* Confidence badge */
+.confidence{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;
+  margin-left:8px;
+}
+.conf-high{background:var(--accent-light);color:var(--accent)}
+.conf-med{background:var(--accent2-light);color:var(--accent2)}
+.conf-low{background:var(--red-light);color:var(--red)}
+
+/* Field highlight */
+.fc-ai{border-color:var(--accent)!important;background:var(--accent-light)!important}
+
+/* Review banner */
+.review-banner{
+  background:linear-gradient(135deg,var(--accent-light),#d4eadb);
+  border:1px solid var(--accent);border-radius:10px;
+  padding:14px 16px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.review-banner-icon{font-size:22px}
+.review-banner-text strong{font-size:13px;color:var(--accent);display:block}
+.review-banner-text span{font-size:11px;color:var(--text2)}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(3px)}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:14px;padding:28px;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);transform:translateY(12px);transition:transform .2s}
+.overlay.open .modal{transform:translateY(0)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.modal-footer{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.btn-cancel{background:var(--surface2);border:1px solid var(--border);color:var(--text2)}
+
+/* Form */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:5px;font-weight:600;display:flex;align-items:center;gap:4px}
+.fc{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:var(--sans);font-size:13px;outline:none;transition:border .15s}
+.fc:focus{border-color:var(--accent);background:#fff}
+.fc::placeholder{color:var(--text3)}
+
+/* Report */
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.report-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.report-card h3{font-size:13px;font-weight:700;margin-bottom:16px;color:var(--text)}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.bar-label{font-size:11px;color:var(--text2);width:140px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .5s}
+.bar-val{font-size:11px;color:var(--text2);font-family:var(--mono);width:70px;text-align:right}
+
+/* Email */
+.email-preview{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-family:var(--mono);font-size:11px;margin-bottom:14px}
+.ep-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border)}
+.ep-row:last-child{border-bottom:none;font-weight:700}
+.ep-label{color:var(--text3)}.ep-val{color:var(--text)}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;border-radius:8px;padding:12px 18px;font-size:13px;z-index:999;display:flex;align-items:center;gap:8px;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1)}
+.toast.show{transform:translateY(0);opacity:1}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .scan-layout{grid-template-columns:1fr}
+  .report-grid{grid-template-columns:1fr}
+  .scan-hero{flex-direction:column;gap:16px}
+}
 </style>
 </head>
 <body>
 
-<div class="layout">
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="logo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#0d0f14" stroke-width="2.5">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14 2 14 8 20 8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-        <polyline points="10 9 9 9 8 9"/>
-      </svg>
+<!-- NAV -->
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a472a" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
     </div>
-    <button class="nav-btn active" title="Invoices">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-      </svg>
-    </button>
-    <button class="nav-btn" title="Analytics">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
-    </button>
-    <button class="nav-btn" title="Settings">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-      </svg>
-    </button>
-  </aside>
+    <span class="brand-name">Eligens</span><span class="brand-sub">/ Invoices</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('invoices',this)">📋 Invoices</button>
+    <button class="nav-tab" onclick="showPage('scan',this)">🤖 Scan Invoice</button>
+    <button class="nav-tab" onclick="showPage('add',this)">➕ Add Manual</button>
+    <button class="nav-tab" onclick="showPage('report',this)">📊 Reports</button>
+    <button class="nav-tab" onclick="showPage('email',this)">📧 Send to Accountant</button>
+  </div>
+  <div class="nav-right" id="todayLabel"></div>
+</nav>
 
-  <div class="main">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-left">
-        <h1>Invoice Manager</h1>
-        <p id="dateDisplay"></p>
+<!-- ═══════════ PAGE: INVOICES ═══════════ -->
+<div class="page active" id="page-invoices">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val b" id="s-total">0</div><div class="stat-sub">invoices</div></div>
+    <div class="stat"><div class="stat-label">Total Amount</div><div class="stat-val b" id="s-amount">€0</div><div class="stat-sub">all invoices</div></div>
+    <div class="stat"><div class="stat-label">Paid</div><div class="stat-val g" id="s-paid">€0</div><div class="stat-sub" id="s-paid-ct">0 invoices</div></div>
+    <div class="stat"><div class="stat-label">Unpaid</div><div class="stat-val o" id="s-unpaid">€0</div><div class="stat-sub" id="s-unpaid-ct">0 invoices</div></div>
+    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-val r" id="s-overdue">€0</div><div class="stat-sub" id="s-overdue-ct">0 invoices</div></div>
+  </div>
+  <div class="toolbar">
+    <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="Search vendor, invoice #…" oninput="applyFilters()"></div>
+    <select class="filter" id="filt-status" onchange="applyFilters()"><option value="">All Statuses</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option><option value="overdue">Overdue</option></select>
+    <select class="filter" id="filt-priority" onchange="applyFilters()"><option value="">All Priorities</option><option value="URGENT">Urgent</option><option value="H">High</option><option value="M">Medium</option></select>
+    <select class="filter" id="filt-category" onchange="applyFilters()"><option value="">All Categories</option><option>Logistics</option><option>Security</option><option>Office Supplies</option><option>Cleaning</option><option>Utilities</option><option>Tax</option><option>Postal</option><option>Other</option></select>
+    <select class="filter" id="filt-month" onchange="applyFilters()"><option value="">All Months</option></select>
+    <div class="spacer"></div>
+    <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn btn-ai" onclick="showPage('scan',document.querySelectorAll('.nav-tab')[1])">🤖 Scan New Invoice</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Priority</th><th>Status</th><th>Invoice #</th><th>Vendor</th><th>Category</th><th>Invoice Date</th><th>Due Date</th><th>Amount €</th><th>Payment Date</th><th>Notes</th><th>Document</th><th>Actions</th></tr></thead>
+      <tbody id="invoiceBody"></tbody>
+    </table>
+    <div id="emptyMsg" style="padding:40px;text-align:center;color:var(--text3);font-size:13px;display:none">No invoices found</div>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: AI SCAN ═══════════ -->
+<div class="page" id="page-scan">
+
+  <div class="scan-hero">
+    <div class="scan-hero-text">
+      <h2>🤖 AI Invoice Scanner</h2>
+      <p>Drop any invoice PDF or image. Claude AI reads it instantly — vendor, amount, dates, invoice number — and pre-fills the form. You just review, correct if needed, and confirm.</p>
+    </div>
+    <div class="scan-hero-badge">
+      <div class="big">~3s</div>
+      <small>avg. scan time</small>
+    </div>
+  </div>
+
+  <!-- Step 1: Drop zone (shown first) -->
+  <div id="step-upload">
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('scanFileInput').click()">
+      <span class="dz-icon">📄</span>
+      <div class="dz-title">Drop your invoice here</div>
+      <div class="dz-sub">or <span>browse to upload</span></div>
+      <div class="dz-types">
+        <span class="dz-type">PDF</span>
+        <span class="dz-type">PNG</span>
+        <span class="dz-type">JPG</span>
+        <span class="dz-type">JPEG</span>
       </div>
-      <div class="header-actions">
-        <button class="btn btn-ghost" onclick="exportCSV()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          Export
-        </button>
-        <button class="btn btn-primary" onclick="scrollToForm()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          New Invoice
-        </button>
+    </div>
+    <input type="file" id="scanFileInput" accept=".pdf,.png,.jpg,.jpeg" onchange="handleScanFile(this)">
+
+    <!-- API Key input -->
+    <div style="margin-top:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px;box-shadow:var(--shadow)">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:6px">🔑 Anthropic API Key</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Required for AI scanning. Your key is stored only in this browser session — never sent anywhere except directly to Anthropic.</div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input class="fc" id="apiKeyInput" type="password" placeholder="sk-ant-api03-…" style="flex:1;font-family:var(--mono);font-size:12px">
+        <button class="btn btn-ghost" onclick="saveApiKey()" style="white-space:nowrap">Save Key</button>
       </div>
-    </header>
+      <div id="apiKeyStatus" style="font-size:11px;margin-top:6px;color:var(--text3)"></div>
+    </div>
+  </div>
 
-    <!-- Content -->
-    <div class="content">
-      <!-- Stats -->
-      <div class="stats">
-        <div class="stat-card">
-          <div class="stat-label">Total Invoices</div>
-          <div class="stat-value blue" id="statTotal">0</div>
-          <div class="stat-sub">All time</div>
+  <!-- Step 2: Scanning animation -->
+  <div class="scan-loading" id="step-scanning">
+    <div class="scan-spinner"></div>
+    <div class="scan-loading-text">Reading your invoice…</div>
+    <div class="scan-loading-sub">Claude is extracting all the details</div>
+    <div class="scan-steps">
+      <div class="scan-step active" id="sstep-1"><span class="scan-step-icon">📤</span> Uploading file</div>
+      <div class="scan-step" id="sstep-2"><span class="scan-step-icon">👁</span> Analysing document</div>
+      <div class="scan-step" id="sstep-3"><span class="scan-step-icon">🔍</span> Extracting fields</div>
+      <div class="scan-step" id="sstep-4"><span class="scan-step-icon">✅</span> Pre-filling form</div>
+    </div>
+  </div>
+
+  <!-- Step 3: Review form -->
+  <div id="step-review" style="display:none">
+    <div class="scan-layout">
+
+      <!-- Left: document preview -->
+      <div class="preview-pane">
+        <div class="pane-header">
+          <span class="pane-title">📄 Uploaded Document</span>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="resetScan()">✕ Scan Another</button>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Amount</div>
-          <div class="stat-value green" id="statAmount">€0</div>
-          <div class="stat-sub">Outstanding + paid</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Pending</div>
-          <div class="stat-value yellow" id="statPending">0</div>
-          <div class="stat-sub">Awaiting payment</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Overdue</div>
-          <div class="stat-value red" id="statOverdue">0</div>
-          <div class="stat-sub">Past due date</div>
+        <div class="pane-body">
+          <img id="invoicePreviewImg" style="display:none">
+          <iframe id="invoicePreviewPdf" style="display:none"></iframe>
+          <div id="invoicePreviewFallback" style="display:none;padding:40px;text-align:center;color:var(--text3);font-size:13px">📄 Document loaded<br><small style="font-family:var(--mono)" id="previewFileName"></small></div>
         </div>
       </div>
 
-      <!-- Panels -->
-      <div class="panels">
-        <!-- Invoice Table -->
-        <div class="panel">
-          <div class="panel-header">
-            <span class="panel-title">Invoices</span>
-            <div class="search-bar">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#535d72" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
-              </svg>
-              <input type="text" placeholder="Search invoices..." oninput="filterInvoices(this.value)">
-            </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Invoice #</th>
-                <th>Vendor</th>
-                <th>Date</th>
-                <th>Due Date</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="invoiceTableBody">
-            </tbody>
-          </table>
-          <div class="empty-state" id="emptyState" style="display:none">
-            No invoices yet. Add your first one →
+      <!-- Right: AI-filled form -->
+      <div class="form-pane">
+        <div class="review-banner">
+          <span class="review-banner-icon">✨</span>
+          <div class="review-banner-text">
+            <strong>AI has pre-filled the form</strong>
+            <span>Review each field, correct if needed, then click Accept & Save</span>
           </div>
         </div>
 
-        <!-- Right panel -->
-        <div class="add-panel" id="addPanel">
-          <!-- Add Form -->
-          <div class="form-section">
-            <h3>➕ Add Invoice</h3>
-            <div class="row2">
-              <div class="form-group">
-                <label>Invoice #</label>
-                <input class="form-control" id="fInvNum" placeholder="INV-001" type="text">
-              </div>
-              <div class="form-group">
-                <label>Vendor</label>
-                <input class="form-control" id="fVendor" placeholder="Vendor name" type="text">
-              </div>
-            </div>
-            <div class="row2">
-              <div class="form-group">
-                <label>Invoice Date</label>
-                <input class="form-control" id="fDate" type="date">
-              </div>
-              <div class="form-group">
-                <label>Due Date</label>
-                <input class="form-control" id="fDue" type="date">
-              </div>
-            </div>
-            <div class="row2">
-              <div class="form-group">
-                <label>Amount (€)</label>
-                <input class="form-control" id="fAmount" placeholder="0.00" type="number" step="0.01">
-              </div>
-              <div class="form-group">
-                <label>Status</label>
-                <select class="form-control" id="fStatus">
-                  <option value="pending">Pending</option>
-                  <option value="paid">Paid</option>
-                  <option value="overdue">Overdue</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-group">
-              <label>Description</label>
-              <input class="form-control" id="fDesc" placeholder="Optional note" type="text">
-            </div>
-            <div class="form-group">
-              <label>Invoice File</label>
-              <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
-                <div class="upload-icon">📎</div>
-                <div class="upload-text">Drop file or <span>browse</span></div>
-                <div class="upload-file-name" id="uploadFileName"></div>
-              </div>
-              <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg" onchange="handleFileSelect(this)">
-            </div>
-            <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="addInvoice()">
-              Add Invoice
-            </button>
-          </div>
+        <div id="aiRawNote" style="display:none;background:var(--accent2-light);border:1px solid var(--accent2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text2);margin-bottom:14px"></div>
 
-          <!-- Email section -->
-          <div class="email-section">
-            <h3>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-              </svg>
-              Send to Accountant
-            </h3>
-            <div class="form-group">
-              <label>Accountant Email</label>
-              <input class="form-control" id="accountantEmail" placeholder="accountant@company.com" type="email" value="">
-            </div>
-            <div class="form-group">
-              <label>Select Invoice to Send</label>
-              <select class="form-control" id="emailInvoiceSelect">
-                <option value="">— Choose invoice —</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Message (optional)</label>
-              <input class="form-control" id="emailMessage" placeholder="Please process the attached invoice." type="text">
-            </div>
-            <button class="btn-email" onclick="openEmailModal()">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-              </svg>
-              Send Invoice Email
-            </button>
+        <div class="grid3">
+          <div class="fg">
+            <label>Priority</label>
+            <select class="fc" id="ai-priority"><option value="">None</option><option value="M">Medium</option><option value="H">High</option><option value="URGENT">URGENT</option></select>
           </div>
+          <div class="fg">
+            <label>Status</label>
+            <select class="fc" id="ai-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select>
+          </div>
+          <div class="fg">
+            <label>Category</label>
+            <select class="fc" id="ai-category"><option>Logistics</option><option>Security</option><option>Office Supplies</option><option>Cleaning</option><option>Utilities</option><option>Tax</option><option>Postal</option><option>Other</option></select>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="fg">
+            <label>Invoice Number <span id="conf-num"></span></label>
+            <input class="fc" id="ai-num" type="text" placeholder="Invoice number">
+          </div>
+          <div class="fg">
+            <label>Vendor / Company <span id="conf-vendor"></span></label>
+            <input class="fc" id="ai-vendor" type="text" placeholder="Vendor name">
+          </div>
+        </div>
+
+        <div class="grid3">
+          <div class="fg">
+            <label>Invoice Date <span id="conf-date"></span></label>
+            <input class="fc" id="ai-date" type="date">
+          </div>
+          <div class="fg">
+            <label>Due Date <span id="conf-due"></span></label>
+            <input class="fc" id="ai-due" type="date">
+          </div>
+          <div class="fg">
+            <label>Payment Date</label>
+            <input class="fc" id="ai-paiddate" type="date">
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="fg">
+            <label>Amount (EUR) <span id="conf-amount"></span></label>
+            <input class="fc" id="ai-amount" type="number" step="0.01" placeholder="0.00">
+          </div>
+          <div class="fg">
+            <label>VAT / Tax <span id="conf-vat"></span></label>
+            <input class="fc" id="ai-vat" type="text" placeholder="e.g. 21%">
+          </div>
+        </div>
+
+        <div class="fg">
+          <label>Notes <span id="conf-notes"></span></label>
+          <input class="fc" id="ai-notes" type="text" placeholder="Any notes from the invoice">
+        </div>
+
+        <div class="fg">
+          <label>Document Link</label>
+          <input class="fc" id="ai-link" type="text" placeholder="https://… or leave blank">
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button class="btn btn-ghost" onclick="resetScan()" style="flex:1;justify-content:center">✕ Discard</button>
+          <button class="btn btn-ai" onclick="acceptScanned()" style="flex:2;justify-content:center;font-size:13px">✅ Accept & Save Invoice</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Email Modal -->
-<div class="modal-overlay" id="emailModal">
+<!-- ═══════════ PAGE: MANUAL ADD ═══════════ -->
+<div class="page" id="page-add">
+  <div style="max-width:680px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)">
+      <div class="modal-title" id="formTitle">➕ Add Invoice Manually</div>
+      <input type="hidden" id="editId">
+      <div class="grid3">
+        <div class="fg"><label>Priority</label><select class="fc" id="f-priority"><option value="">None</option><option value="M">Medium</option><option value="H">High</option><option value="URGENT">URGENT</option></select></div>
+        <div class="fg"><label>Status *</label><select class="fc" id="f-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
+        <div class="fg"><label>Category *</label><select class="fc" id="f-category"><option>Logistics</option><option>Security</option><option>Office Supplies</option><option>Cleaning</option><option>Utilities</option><option>Tax</option><option>Postal</option><option>Other</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label>Invoice Number *</label><input class="fc" id="f-num" placeholder="e.g. INV-2026-001" type="text"></div>
+        <div class="fg"><label>Vendor / Company *</label><input class="fc" id="f-vendor" placeholder="Company name" type="text"></div>
+      </div>
+      <div class="grid3">
+        <div class="fg"><label>Invoice Date *</label><input class="fc" id="f-date" type="date"></div>
+        <div class="fg"><label>Due Date *</label><input class="fc" id="f-due" type="date"></div>
+        <div class="fg"><label>Payment Date</label><input class="fc" id="f-paiddate" type="date"></div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><label>Amount (EUR) *</label><input class="fc" id="f-amount" placeholder="0.00" type="number" step="0.01"></div>
+        <div class="fg"><label>VAT / Tax Code</label><input class="fc" id="f-vat" placeholder="e.g. 21% VAT" type="text"></div>
+      </div>
+      <div class="fg"><label>Notes</label><input class="fc" id="f-notes" placeholder="Any special notes" type="text"></div>
+      <div class="fg"><label>Document Link</label><input class="fc" id="f-link" placeholder="https://… SharePoint / Drive URL" type="text"></div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-ghost" onclick="resetForm()" style="flex:1;justify-content:center">✕ Clear</button>
+        <button class="btn btn-primary" onclick="saveInvoice()" style="flex:2;justify-content:center" id="saveBtn">✓ Save Invoice</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: REPORTS ═══════════ -->
+<div class="page" id="page-report">
+  <div class="stats" id="report-stats"></div>
+  <div class="report-grid">
+    <div class="report-card"><h3>Payment Status Overview</h3><div id="status-chart"></div></div>
+    <div class="report-card"><h3>Spend by Category</h3><div id="cat-chart"></div></div>
+    <div class="report-card"><h3>Top Vendors by Amount</h3><div id="vendor-chart"></div></div>
+    <div class="report-card"><h3>Monthly Volume (€)</h3><div id="monthly-chart"></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div>
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent)">✅ Paid Invoices</h3>
+      <div class="table-wrap"><table><thead><tr><th>Invoice #</th><th>Vendor</th><th>Amount</th><th>Paid On</th></tr></thead><tbody id="paid-table"></tbody></table></div>
+    </div>
+    <div>
+      <h3 style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--accent2)">⏳ Unpaid / Overdue</h3>
+      <div class="table-wrap"><table><thead><tr><th>Invoice #</th><th>Vendor</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead><tbody id="unpaid-table"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PAGE: EMAIL ═══════════ -->
+<div class="page" id="page-email">
+  <div style="max-width:560px">
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)">
+      <div class="modal-title">📧 Send Invoice to Accountant</div>
+      <div class="fg"><label>Accountant Email *</label><input class="fc" id="acct-email" placeholder="accountant@eligens.io" type="email"></div>
+      <div class="fg"><label>Select Invoice *</label><select class="fc" id="email-inv-select" onchange="previewEmailInv()"><option value="">— Choose invoice —</option></select></div>
+      <div id="email-inv-preview" style="display:none" class="email-preview"></div>
+      <div class="fg"><label>CC (optional)</label><input class="fc" id="email-cc" placeholder="manager@eligens.io" type="email"></div>
+      <div class="fg"><label>Message</label><textarea class="fc" id="email-msg" rows="3" placeholder="Please process the attached invoice at your earliest convenience."></textarea></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" onclick="openSendModal()">✈️ Review & Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEND MODAL -->
+<div class="overlay" id="sendOverlay">
   <div class="modal">
-    <h2>📤 Send Invoice to Accountant</h2>
-    <p>Review before sending</p>
-    <div class="invoice-preview" id="emailPreview"></div>
-    <div class="form-group">
-      <label style="font-size:11px;color:var(--text2);display:block;margin-bottom:5px;">TO</label>
-      <div style="font-size:13px;color:var(--text);font-family:var(--mono)" id="modalTo"></div>
-    </div>
-    <br>
-    <div class="modal-actions">
-      <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="sendEmail()" style="flex:2">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-        </svg>
-        Send Now
-      </button>
+    <div class="modal-title">📤 Confirm & Send</div>
+    <div id="sendPreview"></div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeOverlay('sendOverlay')">Cancel</button>
+      <button class="btn btn-amber" onclick="doSendEmail()">📧 Open Email Client</button>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast">
-  <span>✅</span>
-  <span id="toastMsg">Done!</span>
-</div>
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
 
 <script>
-// State
-let invoices = JSON.parse(localStorage.getItem('inv_data') || '[]');
-let uploadedFile = null;
-let selectedInvoiceId = null;
+// ────────────────────────────────────────────────
+// SEED DATA (all 93 real Eligens invoices)
+// ────────────────────────────────────────────────
+const SEED=[
+  {id:1,priority:'H',status:'paid',num:'UR2509076',vendor:'TERSUS SIA',category:'Security',date:'2025-09-01',due:'2025-09-06',paidDate:'2025-09-19',amount:257.57,vat:'',notes:'',link:'Tersus_UR2509076.pdf'},
+  {id:2,priority:'M',status:'paid',num:'2025091710',vendor:'GRIFS AG SIA',category:'Security',date:'2025-09-01',due:'2025-09-11',paidDate:'2025-09-04',amount:41.14,vat:'',notes:'',link:'Grifs AG_2025091710.pdf'},
+  {id:3,priority:'',status:'paid',num:'RIXR000263717',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2025-08-31',due:'2025-09-07',paidDate:'2025-09-07',amount:55.47,vat:'',notes:'',link:'DHL_RIXR000263717.pdf'},
+  {id:4,priority:'',status:'paid',num:'MUP2003577',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-08-31',due:'2025-09-14',paidDate:'2025-09-04',amount:68.76,vat:'',notes:'',link:'LatvijasPasts_MUO2003577.pdf'},
+  {id:5,priority:'M',status:'paid',num:'PPD2097846',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-08-31',due:'2025-09-20',paidDate:'2025-09-30',amount:352.56,vat:'',notes:'',link:'LatvijasPasts_PPD2097846.pdf'},
+  {id:6,priority:'M',status:'unpaid',num:'BR2248342',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-09-01',due:'2025-09-15',paidDate:'',amount:24.20,vat:'',notes:'',link:'Venden_BR2248342.pdf'},
+  {id:7,priority:'',status:'paid',num:'24876',vendor:'MyDello OÜ',category:'Logistics',date:'2025-09-08',due:'2025-09-09',paidDate:'2025-09-09',amount:100.55,vat:'',notes:'',link:'MyDello_24876.pdf'},
+  {id:8,priority:'M',status:'unpaid',num:'71090907',vendor:'Lindstrom SIA',category:'Cleaning',date:'2025-09-08',due:'2025-09-22',paidDate:'',amount:10.35,vat:'',notes:'',link:'Lindstrom_71090907.pdf'},
+  {id:9,priority:'',status:'paid',num:'24957',vendor:'MyDello OÜ',category:'Logistics',date:'2025-09-10',due:'2025-09-11',paidDate:'2025-09-10',amount:79.46,vat:'',notes:'',link:'MyDello_24957.pdf'},
+  {id:10,priority:'H',status:'paid',num:'24958',vendor:'MyDello OÜ',category:'Logistics',date:'2025-09-10',due:'2025-09-11',paidDate:'2025-09-18',amount:35.00,vat:'',notes:'',link:'MyDello_24958.pdf'},
+  {id:11,priority:'M',status:'paid',num:'RIXR000265231',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2025-09-15',due:'2025-09-22',paidDate:'2025-09-30',amount:73.43,vat:'',notes:'',link:''},
+  {id:12,priority:'M',status:'paid',num:'RIXR000265938',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2025-09-22',due:'2025-09-29',paidDate:'2025-09-30',amount:56.59,vat:'',notes:'',link:''},
+  {id:13,priority:'M',status:'paid',num:'42421494-8',vendor:'TET SIA',category:'Utilities',date:'2025-09-23',due:'2025-10-05',paidDate:'2025-09-30',amount:101.59,vat:'',notes:'',link:'TET_42421494-8.pdf'},
+  {id:14,priority:'M',status:'unpaid',num:'03T 6372767',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-09-29',due:'2025-10-09',paidDate:'',amount:9.99,vat:'',notes:'',link:''},
+  {id:15,priority:'M',status:'unpaid',num:'MUP2003678',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-09-30',due:'2025-10-12',paidDate:'',amount:75.44,vat:'',notes:'',link:''},
+  {id:16,priority:'',status:'unpaid',num:'PPD2101409',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-09-30',due:'2025-10-21',paidDate:'',amount:334.62,vat:'',notes:'',link:''},
+  {id:17,priority:'M',status:'unpaid',num:'.UR2510075',vendor:'TERSUS SIA',category:'Security',date:'2025-10-01',due:'2025-10-06',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:18,priority:'M',status:'unpaid',num:'2025101703',vendor:'GRIFS AG SIA',category:'Security',date:'2025-10-01',due:'2025-10-11',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:19,priority:'M',status:'unpaid',num:'5.1/2025/16192',vendor:'Vervo SIA',category:'Logistics',date:'2025-10-03',due:'2025-10-17',paidDate:'',amount:242.00,vat:'',notes:'',link:''},
+  {id:20,priority:'',status:'unpaid',num:'BR2259722',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-10-01',due:'2025-10-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:21,priority:'',status:'unpaid',num:'71096815',vendor:'Lindstrom SIA',category:'Cleaning',date:'2025-10-06',due:'2025-10-20',paidDate:'',amount:10.35,vat:'',notes:'',link:''},
+  {id:22,priority:'',status:'paid',num:'26153',vendor:'MyDello OÜ',category:'Logistics',date:'2025-10-16',due:'2025-10-17',paidDate:'2025-10-17',amount:73.28,vat:'',notes:'',link:''},
+  {id:23,priority:'',status:'unpaid',num:'M2025-0095',vendor:'ProClear Kustoms IK',category:'Cleaning',date:'2025-10-16',due:'2025-10-26',paidDate:'',amount:30.00,vat:'',notes:'',link:''},
+  {id:24,priority:'',status:'unpaid',num:'25105567 ROLL',vendor:'Rolling SIA',category:'Other',date:'2025-10-20',due:'2025-10-25',paidDate:'',amount:62.47,vat:'',notes:'',link:''},
+  {id:25,priority:'',status:'paid',num:'26277',vendor:'MyDello OÜ',category:'Logistics',date:'2025-10-21',due:'2025-10-22',paidDate:'2025-10-21',amount:68.79,vat:'',notes:'',link:''},
+  {id:26,priority:'',status:'unpaid',num:'M2025-0098',vendor:'ProClear Kustoms IK',category:'Cleaning',date:'2025-10-21',due:'2025-10-31',paidDate:'',amount:30.00,vat:'',notes:'',link:''},
+  {id:27,priority:'',status:'unpaid',num:'42813962-1',vendor:'TET SIA',category:'Utilities',date:'2025-10-22',due:'2025-11-03',paidDate:'',amount:101.59,vat:'',notes:'',link:''},
+  {id:28,priority:'',status:'unpaid',num:'26467',vendor:'MyDello OÜ',category:'Logistics',date:'2025-10-24',due:'2025-10-25',paidDate:'',amount:54.36,vat:'',notes:'',link:''},
+  {id:29,priority:'',status:'unpaid',num:'M2025-0099',vendor:'ProClear Kustoms IK',category:'Cleaning',date:'2025-10-24',due:'2025-11-03',paidDate:'',amount:30.00,vat:'',notes:'',link:''},
+  {id:30,priority:'',status:'unpaid',num:'MUP2003803',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-10-31',due:'2025-11-15',paidDate:'',amount:40.62,vat:'',notes:'',link:''},
+  {id:31,priority:'',status:'unpaid',num:'PPD2103791',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-10-31',due:'2025-11-15',paidDate:'',amount:203.28,vat:'',notes:'',link:''},
+  {id:32,priority:'',status:'unpaid',num:'BR227112',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-11-01',due:'2025-11-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:33,priority:'',status:'unpaid',num:'2025111687',vendor:'GRIFS AG SIA',category:'Security',date:'2025-11-03',due:'2025-11-13',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:34,priority:'',status:'unpaid',num:'UR2511075',vendor:'TERSUS SIA',category:'Security',date:'2025-11-03',due:'2025-11-08',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:35,priority:'',status:'unpaid',num:'682167969',vendor:'FedEx Express Latvia SIA',category:'Logistics',date:'2025-11-03',due:'',paidDate:'',amount:12.10,vat:'',notes:'',link:''},
+  {id:36,priority:'',status:'unpaid',num:'71102758',vendor:'Lindstrom SIA',category:'Cleaning',date:'2025-11-03',due:'2025-11-17',paidDate:'',amount:10.35,vat:'',notes:'',link:''},
+  {id:37,priority:'',status:'unpaid',num:'03T 6400869',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-11-05',due:'2025-11-15',paidDate:'',amount:19.99,vat:'',notes:'',link:''},
+  {id:38,priority:'',status:'unpaid',num:'M2025-0113',vendor:'ProClear Kustoms IK',category:'Cleaning',date:'2025-11-13',due:'2025-11-23',paidDate:'',amount:30.00,vat:'',notes:'',link:''},
+  {id:39,priority:'',status:'unpaid',num:'27172',vendor:'MyDello OÜ',category:'Logistics',date:'2025-11-13',due:'2025-11-14',paidDate:'',amount:71.29,vat:'',notes:'',link:''},
+  {id:40,priority:'',status:'unpaid',num:'2748',vendor:'MyDello OÜ',category:'Logistics',date:'2025-11-24',due:'2025-11-25',paidDate:'',amount:54.53,vat:'',notes:'',link:''},
+  {id:41,priority:'',status:'unpaid',num:'RIXR00027221',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2025-11-17',due:'',paidDate:'',amount:64.35,vat:'',notes:'',link:''},
+  {id:42,priority:'',status:'unpaid',num:'43150420-1',vendor:'TET SIA',category:'Utilities',date:'2025-11-25',due:'2025-12-07',paidDate:'',amount:104.13,vat:'',notes:'',link:''},
+  {id:43,priority:'URGENT',status:'unpaid',num:'PPD2106745',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-11-30',due:'2025-12-20',paidDate:'',amount:204.35,vat:'',notes:'',link:''},
+  {id:44,priority:'URGENT',status:'unpaid',num:'MUP2003896',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-11-30',due:'2025-12-13',paidDate:'',amount:4.06,vat:'',notes:'',link:''},
+  {id:45,priority:'',status:'unpaid',num:'71108693',vendor:'Lindstrom SIA',category:'Cleaning',date:'2025-12-01',due:'2025-12-15',paidDate:'',amount:10.35,vat:'',notes:'',link:''},
+  {id:46,priority:'',status:'unpaid',num:'BR2282462',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2025-12-01',due:'2025-12-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:47,priority:'URGENT',status:'unpaid',num:'2025121682',vendor:'GRIFS AG SIA',category:'Security',date:'2025-12-01',due:'2025-12-11',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:48,priority:'URGENT',status:'unpaid',num:'UR2512072',vendor:'TERSUS SIA',category:'Security',date:'2025-12-01',due:'2025-12-06',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:49,priority:'URGENT',status:'unpaid',num:'27861',vendor:'MyDello OÜ',category:'Logistics',date:'2025-12-04',due:'2025-12-05',paidDate:'',amount:67.80,vat:'',notes:'',link:''},
+  {id:50,priority:'URGENT',status:'unpaid',num:'28336',vendor:'MyDello OÜ',category:'Logistics',date:'2025-12-16',due:'2025-12-17',paidDate:'',amount:96.17,vat:'',notes:'',link:'https://netorgft13497992-my.sharepoint.com/:b:/g/personal/e_campere_eligens_io/IQCU08tNp8vxTKNtbv8MRSuVAZ97HUtE_wShGlmwBJr9Sxo?e=nw7h2Q'},
+  {id:51,priority:'URGENT',status:'unpaid',num:'43510835-7',vendor:'TET SIA',category:'Utilities',date:'2025-12-23',due:'2026-01-04',paidDate:'',amount:101.59,vat:'',notes:'',link:''},
+  {id:52,priority:'URGENT',status:'unpaid',num:'28746',vendor:'MyDello OÜ',category:'Logistics',date:'2025-12-29',due:'2025-12-30',paidDate:'',amount:84.61,vat:'',notes:'',link:''},
+  {id:53,priority:'',status:'unpaid',num:'M2025-0133',vendor:'ProClear Kustoms IK',category:'Cleaning',date:'2025-12-29',due:'2026-01-08',paidDate:'',amount:30.00,vat:'',notes:'',link:''},
+  {id:54,priority:'',status:'unpaid',num:'PPD2110184',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-12-30',due:'2026-01-21',paidDate:'',amount:287.49,vat:'',notes:'',link:''},
+  {id:55,priority:'',status:'unpaid',num:'MUP2003983',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2025-12-30',due:'2026-01-18',paidDate:'',amount:4.06,vat:'',notes:'',link:''},
+  {id:56,priority:'',status:'unpaid',num:'BR2293778',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2026-01-01',due:'2026-01-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:57,priority:'',status:'unpaid',num:'2026011670',vendor:'GRIFS AG SIA',category:'Security',date:'2026-01-02',due:'2026-01-12',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:58,priority:'',status:'unpaid',num:'UR2601070',vendor:'TERSUS SIA',category:'Security',date:'2026-01-02',due:'2026-01-07',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:59,priority:'',status:'unpaid',num:'20262',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-01-06',due:'2026-01-15',paidDate:'',amount:36.30,vat:'',notes:'PLEASE PAY ATTENTION THAT PAYMENT DETAILS ARE CHANGED',link:''},
+  {id:60,priority:'',status:'unpaid',num:'20263',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-01-06',due:'2026-01-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:61,priority:'',status:'unpaid',num:'28968',vendor:'MyDello OÜ',category:'Logistics',date:'2026-01-06',due:'2026-01-07',paidDate:'',amount:34.00,vat:'',notes:'',link:''},
+  {id:62,priority:'',status:'unpaid',num:'29026',vendor:'MyDello OÜ',category:'Logistics',date:'2026-01-07',due:'2026-01-08',paidDate:'',amount:72.59,vat:'',notes:'',link:''},
+  {id:63,priority:'',status:'unpaid',num:'29058',vendor:'MyDello OÜ',category:'Logistics',date:'2026-01-08',due:'2026-01-09',paidDate:'',amount:59.31,vat:'',notes:'',link:''},
+  {id:64,priority:'',status:'unpaid',num:'20264',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-01-08',due:'2026-01-18',paidDate:'',amount:36.30,vat:'',notes:'',link:''},
+  {id:65,priority:'',status:'unpaid',num:'29139',vendor:'MyDello OÜ',category:'Logistics',date:'2026-01-12',due:'2026-01-13',paidDate:'',amount:78.12,vat:'',notes:'',link:''},
+  {id:66,priority:'',status:'unpaid',num:'ML035348',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2026-01-09',due:'2026-01-16',paidDate:'',amount:14.52,vat:'',notes:'',link:''},
+  {id:67,priority:'',status:'unpaid',num:'43889402-4',vendor:'TET SIA',category:'Utilities',date:'2026-01-22',due:'2026-02-03',paidDate:'',amount:101.59,vat:'',notes:'',link:''},
+  {id:68,priority:'',status:'unpaid',num:'20266',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-01-24',due:'2026-01-31',paidDate:'',amount:36.30,vat:'',notes:'',link:''},
+  {id:69,priority:'',status:'unpaid',num:'71118053',vendor:'Lindstrom SIA',category:'Cleaning',date:'2026-01-26',due:'2026-02-07',paidDate:'',amount:11.28,vat:'',notes:'',link:''},
+  {id:70,priority:'',status:'unpaid',num:'MUP2004063',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-01-31',due:'2026-02-14',paidDate:'',amount:17.46,vat:'',notes:'',link:''},
+  {id:71,priority:'',status:'unpaid',num:'PPD2113732',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-01-31',due:'2026-02-21',paidDate:'',amount:65.71,vat:'',notes:'',link:''},
+  {id:72,priority:'',status:'unpaid',num:'PPD2113735',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-01-31',due:'2026-02-21',paidDate:'',amount:265.16,vat:'',notes:'',link:''},
+  {id:73,priority:'',status:'unpaid',num:'RIXR000280279',vendor:'DHL Express Latvia SIA',category:'Logistics',date:'2026-01-31',due:'2026-02-07',paidDate:'',amount:108.68,vat:'',notes:'',link:''},
+  {id:74,priority:'',status:'unpaid',num:'BR2305098',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2026-02-01',due:'2026-02-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:75,priority:'',status:'unpaid',num:'UR2602070',vendor:'TERSUS SIA',category:'Security',date:'2026-02-02',due:'2026-02-07',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:76,priority:'',status:'unpaid',num:'2026021663',vendor:'GRIFS AG SIA',category:'Security',date:'2026-02-02',due:'2026-02-12',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:77,priority:'',status:'unpaid',num:'30037',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-03',due:'2026-02-04',paidDate:'',amount:35.50,vat:'',notes:'',link:''},
+  {id:78,priority:'',status:'unpaid',num:'30278',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-10',due:'2026-02-11',paidDate:'',amount:37.94,vat:'',notes:'',link:''},
+  {id:79,priority:'',status:'unpaid',num:'03T 6493651',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2026-02-11',due:'2026-02-21',paidDate:'',amount:35.65,vat:'',notes:'',link:''},
+  {id:80,priority:'',status:'unpaid',num:'30390',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-12',due:'2026-02-13',paidDate:'',amount:174.18,vat:'',notes:'',link:''},
+  {id:81,priority:'',status:'unpaid',num:'30433',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-13',due:'2026-02-14',paidDate:'',amount:41.98,vat:'',notes:'',link:''},
+  {id:82,priority:'',status:'unpaid',num:'30559',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-17',due:'2026-02-18',paidDate:'',amount:79.67,vat:'',notes:'',link:''},
+  {id:83,priority:'',status:'unpaid',num:'7112394',vendor:'Lindstrom SIA',category:'Cleaning',date:'2026-02-23',due:'2026-03-09',paidDate:'',amount:11.28,vat:'',notes:'',link:''},
+  {id:84,priority:'',status:'unpaid',num:'44262729-0',vendor:'TET SIA',category:'Utilities',date:'2026-02-24',due:'2026-03-08',paidDate:'',amount:106.59,vat:'',notes:'',link:''},
+  {id:85,priority:'',status:'unpaid',num:'MUP2004156',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-02-28',due:'2026-03-14',paidDate:'',amount:4.53,vat:'',notes:'',link:''},
+  {id:86,priority:'',status:'unpaid',num:'PPD2116470',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-02-28',due:'2026-03-21',paidDate:'',amount:171.77,vat:'',notes:'',link:''},
+  {id:87,priority:'',status:'unpaid',num:'BR2316433',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2026-03-01',due:'2026-03-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
+  {id:88,priority:'',status:'unpaid',num:'2026031737',vendor:'GRIFS AG SIA',category:'Security',date:'2026-03-02',due:'2026-03-12',paidDate:'',amount:41.14,vat:'',notes:'',link:''},
+  {id:89,priority:'',status:'unpaid',num:'UR2603069',vendor:'TERSUS SIA',category:'Security',date:'2026-03-02',due:'2026-03-07',paidDate:'',amount:257.57,vat:'',notes:'',link:''},
+  {id:90,priority:'',status:'unpaid',num:'31125',vendor:'MyDello OÜ',category:'Logistics',date:'2026-03-06',due:'2026-03-09',paidDate:'',amount:66.15,vat:'',notes:'',link:''},
+  {id:91,priority:'',status:'unpaid',num:'31200',vendor:'MyDello OÜ',category:'Logistics',date:'2026-03-09',due:'2026-03-10',paidDate:'',amount:60.05,vat:'',notes:'',link:''},
+  {id:92,priority:'',status:'unpaid',num:'31255',vendor:'MyDello OÜ',category:'Logistics',date:'2026-03-10',due:'2026-03-11',paidDate:'',amount:61.21,vat:'',notes:'',link:''},
+  {id:93,priority:'',status:'unpaid',num:'202628',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-03-10',due:'2026-03-20',paidDate:'',amount:108.90,vat:'',notes:'',link:''},
+];
 
-// Init
-document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-GB', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+// ── STATE ──
+let invoices = JSON.parse(localStorage.getItem('eligens_inv')||'null') || SEED.map(i=>({...i}));
+let nextId = Math.max(...invoices.map(i=>i.id))+1;
+let scanFileData = null;
+let scanFileName = null;
+let scanFileMime = null;
 
-// Set today as default date
-const today = new Date().toISOString().split('T')[0];
-document.getElementById('fDate').value = today;
+// ── INIT ──
+document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+if(sessionStorage.getItem('anthropicKey')) {
+  document.getElementById('apiKeyInput').value = sessionStorage.getItem('anthropicKey');
+  document.getElementById('apiKeyStatus').textContent = '✅ API key loaded from session';
+  document.getElementById('apiKeyStatus').style.color = 'var(--accent)';
+}
+populateMonthFilter();
+updateEmailSelect();
+renderAll();
+
+function save(){ localStorage.setItem('eligens_inv',JSON.stringify(invoices)); }
+
+// ── NAV ──
+function showPage(name,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(name==='report') renderReports();
+  if(name==='invoices') renderAll();
+}
+
+// ── TABLE ──
+function renderAll(){ updateStats(); applyFilters(); updateEmailSelect(); }
+
+function applyFilters(){
+  const q=document.querySelector('#page-invoices .search input').value.toLowerCase();
+  const st=document.getElementById('filt-status').value;
+  const pr=document.getElementById('filt-priority').value;
+  const cat=document.getElementById('filt-category').value;
+  const mo=document.getElementById('filt-month').value;
+  let data=invoices.filter(i=>{
+    if(q&&!i.vendor.toLowerCase().includes(q)&&!i.num.toLowerCase().includes(q)&&!i.category.toLowerCase().includes(q)) return false;
+    if(st&&getStatus(i)!==st) return false;
+    if(pr&&i.priority!==pr) return false;
+    if(cat&&i.category!==cat) return false;
+    if(mo&&!i.date.startsWith(mo)) return false;
+    return true;
+  });
+  renderTable(data);
+}
+
+function renderTable(data){
+  const tbody=document.getElementById('invoiceBody');
+  const empty=document.getElementById('emptyMsg');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=data.map(inv=>{
+    const s=getStatus(inv);
+    const ov=s==='overdue';
+    const rs=inv.notes&&inv.notes.includes('CHANGED')?'background:#fffbf0':'';
+    return `<tr style="${rs}">
+      <td>${inv.priority?`<span class="prio prio-${inv.priority}">${inv.priority}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
+      <td><span class="badge badge-${s}"><span class="dot"></span>${s}</span></td>
+      <td class="bold">${inv.num}</td>
+      <td style="font-weight:500;color:var(--text)">${inv.vendor}</td>
+      <td><span class="cat">${inv.category}</span></td>
+      <td>${fd(inv.date)}</td>
+      <td style="color:${ov?'var(--red)':'inherit'};font-weight:${ov?700:400}">${fd(inv.due)}${ov?' ⚠':''}</td>
+      <td class="amt">€${inv.amount.toFixed(2)}</td>
+      <td style="color:var(--accent)">${inv.paidDate?fd(inv.paidDate):'<span style="color:var(--text3)">—</span>'}</td>
+      <td style="max-width:150px;font-size:11px;color:${inv.notes?'var(--accent2)':'var(--text3)'}">${inv.notes||'—'}</td>
+      <td>${inv.link?`<a href="${inv.link.startsWith('http')?inv.link:'#'}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">📄 View</a>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td>
+        <button class="act-btn" onclick="openEdit(${inv.id})" title="Edit">✏️</button>
+        <button class="act-btn del" onclick="deleteInv(${inv.id})" title="Delete">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function updateStats(){
+  const paid=invoices.filter(i=>getStatus(i)==='paid');
+  const unpaid=invoices.filter(i=>getStatus(i)==='unpaid');
+  const overdue=invoices.filter(i=>getStatus(i)==='overdue');
+  document.getElementById('s-total').textContent=invoices.length;
+  document.getElementById('s-amount').textContent='€'+invoices.reduce((s,i)=>s+i.amount,0).toFixed(2);
+  document.getElementById('s-paid').textContent='€'+paid.reduce((s,i)=>s+i.amount,0).toFixed(2);
+  document.getElementById('s-paid-ct').textContent=paid.length+' invoices';
+  document.getElementById('s-unpaid').textContent='€'+unpaid.reduce((s,i)=>s+i.amount,0).toFixed(2);
+  document.getElementById('s-unpaid-ct').textContent=unpaid.length+' invoices';
+  document.getElementById('s-overdue').textContent='€'+overdue.reduce((s,i)=>s+i.amount,0).toFixed(2);
+  document.getElementById('s-overdue-ct').textContent=overdue.length+' invoices';
+}
+
+function getStatus(inv){
+  if(inv.status==='paid') return 'paid';
+  if(inv.due&&new Date(inv.due)<new Date()&&inv.status!=='paid') return 'overdue';
+  return 'unpaid';
+}
+
+// ── MANUAL ADD/EDIT ──
+function saveInvoice(){
+  const num=document.getElementById('f-num').value.trim();
+  const vendor=document.getElementById('f-vendor').value.trim();
+  const date=document.getElementById('f-date').value;
+  const due=document.getElementById('f-due').value;
+  const amount=parseFloat(document.getElementById('f-amount').value);
+  if(!num||!vendor||!date||!due||isNaN(amount)){toast('⚠️ Fill all required fields');return;}
+  const editId=document.getElementById('editId').value;
+  const inv={
+    id:editId?parseInt(editId):nextId++,
+    priority:document.getElementById('f-priority').value,
+    status:document.getElementById('f-status').value,
+    num,vendor,
+    category:document.getElementById('f-category').value,
+    date,due,
+    paidDate:document.getElementById('f-paiddate').value,
+    amount,
+    vat:document.getElementById('f-vat').value,
+    notes:document.getElementById('f-notes').value,
+    link:document.getElementById('f-link').value
+  };
+  if(editId){
+    const idx=invoices.findIndex(i=>i.id===parseInt(editId));
+    invoices[idx]=inv;
+    toast('✅ Invoice updated');
+  } else {
+    invoices.unshift(inv);
+    toast('✅ Invoice saved');
+  }
+  save();resetForm();renderAll();
+  showPage('invoices',document.querySelectorAll('.nav-tab')[0]);
+}
+
+function resetForm(){
+  ['f-num','f-vendor','f-due','f-amount','f-vat','f-notes','f-link','f-paiddate','editId'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-priority').value='';
+  document.getElementById('f-status').value='unpaid';
+  document.getElementById('f-category').value='Logistics';
+  document.getElementById('formTitle').textContent='➕ Add Invoice Manually';
+  document.getElementById('saveBtn').textContent='✓ Save Invoice';
+  document.getElementById('editId').value='';
+}
+
+function openEdit(id){
+  const inv=invoices.find(i=>i.id===id);if(!inv)return;
+  document.getElementById('editId').value=id;
+  document.getElementById('f-priority').value=inv.priority||'';
+  document.getElementById('f-status').value=inv.status||'unpaid';
+  document.getElementById('f-category').value=inv.category||'Other';
+  document.getElementById('f-num').value=inv.num;
+  document.getElementById('f-vendor').value=inv.vendor;
+  document.getElementById('f-date').value=inv.date;
+  document.getElementById('f-due').value=inv.due||'';
+  document.getElementById('f-paiddate').value=inv.paidDate||'';
+  document.getElementById('f-amount').value=inv.amount;
+  document.getElementById('f-vat').value=inv.vat||'';
+  document.getElementById('f-notes').value=inv.notes||'';
+  document.getElementById('f-link').value=inv.link||'';
+  document.getElementById('formTitle').textContent='✏️ Editing — '+inv.num;
+  document.getElementById('saveBtn').textContent='✓ Save Changes';
+  showPage('add',document.querySelectorAll('.nav-tab')[2]);
+  window.scrollTo(0,0);
+}
+
+function deleteInv(id){
+  if(!confirm('Delete this invoice?'))return;
+  invoices=invoices.filter(i=>i.id!==id);
+  save();renderAll();toast('🗑 Invoice deleted');
+}
+
+// ══════════════════════════════════════════════
+// AI SCAN — CORE FEATURE
+// ══════════════════════════════════════════════
+
+function saveApiKey(){
+  const key=document.getElementById('apiKeyInput').value.trim();
+  if(!key.startsWith('sk-')){toast('⚠️ Invalid API key format');return;}
+  sessionStorage.setItem('anthropicKey',key);
+  document.getElementById('apiKeyStatus').textContent='✅ Key saved for this session';
+  document.getElementById('apiKeyStatus').style.color='var(--accent)';
+  toast('🔑 API key saved');
+}
 
 // Drag & drop
-const zone = document.getElementById('uploadZone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-zone.addEventListener('drop', e => {
-  e.preventDefault();
-  zone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) setFile(file);
-});
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)processScanFile(f)});
 
-function handleFileSelect(input) {
-  if (input.files[0]) setFile(input.files[0]);
+function handleScanFile(input){
+  if(input.files[0]) processScanFile(input.files[0]);
 }
 
-function setFile(file) {
-  uploadedFile = file;
-  document.getElementById('uploadFileName').textContent = '📄 ' + file.name;
-  document.getElementById('uploadZone').style.borderColor = 'var(--accent)';
+function processScanFile(file){
+  const allowed=['application/pdf','image/png','image/jpeg','image/jpg'];
+  if(!allowed.includes(file.type)&&!file.name.match(/\.(pdf|png|jpg|jpeg)$/i)){
+    toast('⚠️ Only PDF, PNG, JPG supported');return;
+  }
+  scanFileName=file.name;
+  scanFileMime=file.type||'application/pdf';
+  const reader=new FileReader();
+  reader.onload=e=>{
+    scanFileData=e.target.result.split(',')[1]; // base64 only
+    startScan(file.type,e.target.result,file.name);
+  };
+  reader.readAsDataURL(file);
 }
 
-function addInvoice() {
-  const num = document.getElementById('fInvNum').value.trim();
-  const vendor = document.getElementById('fVendor').value.trim();
-  const date = document.getElementById('fDate').value;
-  const due = document.getElementById('fDue').value;
-  const amount = parseFloat(document.getElementById('fAmount').value);
-  const status = document.getElementById('fStatus').value;
-  const desc = document.getElementById('fDesc').value.trim();
-
-  if (!num || !vendor || !date || !due || isNaN(amount)) {
-    showToast('⚠️ Fill in all required fields', false);
+async function startScan(mimeType, dataUrl, fileName){
+  const apiKey=sessionStorage.getItem('anthropicKey')||document.getElementById('apiKeyInput').value.trim();
+  if(!apiKey||!apiKey.startsWith('sk-')){
+    toast('⚠️ Enter your Anthropic API key first');
+    document.getElementById('apiKeyInput').focus();
     return;
   }
 
-  const inv = {
-    id: Date.now(),
-    num, vendor, date, due, amount, status, desc,
-    fileName: uploadedFile ? uploadedFile.name : null,
-    fileData: null
+  // Show scanning UI
+  document.getElementById('step-upload').style.display='none';
+  document.getElementById('step-scanning').style.display='block';
+  document.getElementById('step-review').style.display='none';
+
+  // Animate steps
+  const steps=['sstep-1','sstep-2','sstep-3','sstep-4'];
+  let si=0;
+  const stepTimer=setInterval(()=>{
+    if(si>0) document.getElementById(steps[si-1]).className='scan-step done';
+    if(si<steps.length) document.getElementById(steps[si]).className='scan-step active';
+    si++;
+    if(si>steps.length) clearInterval(stepTimer);
+  },700);
+
+  try {
+    // Determine media type for API
+    let apiMime = mimeType;
+    if(!apiMime||apiMime==='application/octet-stream'){
+      apiMime = fileName.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+    }
+
+    // For PDFs use document type, for images use image type
+    const isPdf = apiMime==='application/pdf' || fileName.toLowerCase().endsWith('.pdf');
+    const contentBlock = isPdf
+      ? {type:'document',source:{type:'base64',media_type:'application/pdf',data:scanFileData}}
+      : {type:'image',source:{type:'base64',media_type:apiMime,data:scanFileData}};
+
+    const prompt = `You are an invoice data extraction expert. Extract ALL information from this invoice and return ONLY a valid JSON object with no markdown, no backticks, no explanation.
+
+Return exactly this structure:
+{
+  "invoice_number": "exact invoice number as shown",
+  "vendor": "exact company/vendor name",
+  "invoice_date": "YYYY-MM-DD",
+  "due_date": "YYYY-MM-DD or empty string if not found",
+  "amount": 0.00,
+  "vat_rate": "e.g. 21% or empty",
+  "vat_amount": 0.00,
+  "currency": "EUR or as shown",
+  "category": "one of: Logistics|Security|Office Supplies|Cleaning|Utilities|Tax|Postal|Other",
+  "notes": "any important warnings or notes from the invoice, or empty string",
+  "confidence": "high|medium|low",
+  "raw_text_snippet": "first 200 chars of readable text from invoice"
+}
+
+Category guide:
+- DHL, FedEx, MyDello, Vervo = Logistics
+- GRIFS, TERSUS = Security  
+- LATVIJAS PASTS = Postal
+- TET = Utilities
+- Lindstrom, ProClear = Cleaning
+- VENDEN = Office Supplies
+
+For dates: convert DD.MM.YYYY or any format to YYYY-MM-DD. If year is missing assume 2025 or 2026 based on context.
+For amount: extract the TOTAL amount due as a number only (no currency symbols).
+Return ONLY the JSON object.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:[contentBlock,{type:'text',text:prompt}]}]
+      })
+    });
+
+    clearInterval(stepTimer);
+    steps.forEach(s=>document.getElementById(s).className='scan-step done');
+
+    if(!response.ok){
+      const err=await response.json();
+      throw new Error(err.error?.message||'API error '+response.status);
+    }
+
+    const data=await response.json();
+    const raw=data.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+
+    // Parse JSON — strip any accidental markdown
+    let parsed;
+    try {
+      const clean=raw.replace(/```json|```/g,'').trim();
+      parsed=JSON.parse(clean);
+    } catch(e){
+      throw new Error('Could not parse AI response. Raw: '+raw.substring(0,200));
+    }
+
+    // Show review form
+    fillReviewForm(parsed, dataUrl, fileName, isPdf);
+
+  } catch(err){
+    clearInterval(stepTimer);
+    document.getElementById('step-scanning').style.display='none';
+    document.getElementById('step-upload').style.display='block';
+    toast('❌ Scan failed: '+err.message);
+    console.error(err);
+  }
+}
+
+function fillReviewForm(data, dataUrl, fileName, isPdf){
+  // Show preview
+  document.getElementById('step-scanning').style.display='none';
+  document.getElementById('step-review').style.display='block';
+
+  // Document preview
+  if(isPdf){
+    document.getElementById('invoicePreviewPdf').src=dataUrl;
+    document.getElementById('invoicePreviewPdf').style.display='block';
+    document.getElementById('invoicePreviewImg').style.display='none';
+    document.getElementById('invoicePreviewFallback').style.display='none';
+  } else {
+    document.getElementById('invoicePreviewImg').src=dataUrl;
+    document.getElementById('invoicePreviewImg').style.display='block';
+    document.getElementById('invoicePreviewPdf').style.display='none';
+    document.getElementById('invoicePreviewFallback').style.display='none';
+  }
+
+  // Raw note
+  if(data.raw_text_snippet){
+    document.getElementById('aiRawNote').style.display='block';
+    document.getElementById('aiRawNote').textContent='📝 AI read: "'+data.raw_text_snippet+'"';
+  }
+
+  // Confidence badge helper
+  function confBadge(field, overall){
+    const c = overall || 'medium';
+    const cls = c==='high'?'conf-high':c==='low'?'conf-low':'conf-med';
+    const label = c==='high'?'✓ High':c==='low'?'⚠ Low':'~ Med';
+    return `<span class="confidence ${cls}">${label}</span>`;
+  }
+
+  // Fill form fields
+  setAiField('ai-num', data.invoice_number, data.confidence);
+  setAiField('ai-vendor', data.vendor, data.confidence);
+  setAiField('ai-date', data.invoice_date, data.confidence);
+  setAiField('ai-due', data.due_date||'', data.confidence);
+  setAiField('ai-amount', data.amount, data.confidence);
+  setAiField('ai-vat', data.vat_rate||'', data.confidence);
+  setAiField('ai-notes', data.notes||'', '');
+  document.getElementById('ai-category').value = data.category||'Other';
+
+  // Confidence labels
+  document.getElementById('conf-num').innerHTML = confBadge('num',data.confidence);
+  document.getElementById('conf-vendor').innerHTML = confBadge('vendor',data.confidence);
+  document.getElementById('conf-date').innerHTML = confBadge('date',data.confidence);
+  document.getElementById('conf-due').innerHTML = confBadge('due',data.due_date?data.confidence:'low');
+  document.getElementById('conf-amount').innerHTML = confBadge('amount',data.confidence);
+  document.getElementById('conf-vat').innerHTML = confBadge('vat',data.vat_rate?data.confidence:'low');
+  document.getElementById('conf-notes').innerHTML = '';
+
+  // Highlight low confidence in red
+  if(data.confidence==='low'){
+    ['ai-num','ai-vendor','ai-date','ai-amount'].forEach(id=>{
+      document.getElementById(id).style.borderColor='var(--red)';
+    });
+  }
+
+  // Store file name in link field as reference
+  document.getElementById('ai-link').value = fileName;
+}
+
+function setAiField(id, value, confidence){
+  const el=document.getElementById(id);
+  el.value=value||'';
+  if(value) el.classList.add('fc-ai');
+  else el.classList.remove('fc-ai');
+}
+
+function acceptScanned(){
+  const num=document.getElementById('ai-num').value.trim();
+  const vendor=document.getElementById('ai-vendor').value.trim();
+  const date=document.getElementById('ai-date').value;
+  const due=document.getElementById('ai-due').value;
+  const amount=parseFloat(document.getElementById('ai-amount').value);
+  if(!num||!vendor||!date||isNaN(amount)){toast('⚠️ Invoice # , Vendor, Date and Amount are required');return;}
+
+  const inv={
+    id:nextId++,
+    priority:'',
+    status:document.getElementById('ai-status').value,
+    num,vendor,
+    category:document.getElementById('ai-category').value,
+    date,due,
+    paidDate:document.getElementById('ai-paiddate').value||'',
+    amount,
+    vat:document.getElementById('ai-vat').value||'',
+    notes:document.getElementById('ai-notes').value||'',
+    link:document.getElementById('ai-link').value||scanFileName||''
   };
 
-  if (uploadedFile) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      inv.fileData = e.target.result;
-      finishAdd(inv);
-    };
-    reader.readAsDataURL(uploadedFile);
-  } else {
-    finishAdd(inv);
-  }
-}
-
-function finishAdd(inv) {
   invoices.unshift(inv);
   save();
-  renderTable(invoices);
-  updateStats();
-  updateEmailSelect();
-  resetForm();
-  showToast('✅ Invoice added successfully');
+  renderAll();
+  resetScan();
+  toast('✅ Invoice saved from scan!');
+  showPage('invoices',document.querySelectorAll('.nav-tab')[0]);
 }
 
-function resetForm() {
-  ['fInvNum','fVendor','fDue','fAmount','fDesc'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('fDate').value = today;
-  document.getElementById('fStatus').value = 'pending';
-  document.getElementById('uploadFileName').textContent = '';
-  document.getElementById('uploadZone').style.borderColor = '';
-  uploadedFile = null;
-  document.getElementById('fileInput').value = '';
+function resetScan(){
+  document.getElementById('step-upload').style.display='block';
+  document.getElementById('step-scanning').style.display='none';
+  document.getElementById('step-review').style.display='none';
+  document.getElementById('dropZone').classList.remove('has-file','over');
+  document.getElementById('scanFileInput').value='';
+  document.getElementById('aiRawNote').style.display='none';
+  ['sstep-1','sstep-2','sstep-3','sstep-4'].forEach((s,i)=>{
+    document.getElementById(s).className='scan-step'+(i===0?' active':'');
+  });
+  scanFileData=null; scanFileName=null; scanFileMime=null;
 }
 
-function renderTable(data) {
-  const tbody = document.getElementById('invoiceTableBody');
-  const empty = document.getElementById('emptyState');
-  if (!data.length) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
-  }
-  empty.style.display = 'none';
-  tbody.innerHTML = data.map(inv => `
-    <tr onclick="selectRow(${inv.id})" class="${selectedInvoiceId===inv.id?'selected':''}">
-      <td class="primary">${inv.num}</td>
-      <td>${inv.vendor}</td>
-      <td>${fmt(inv.date)}</td>
-      <td style="color:${isDueClose(inv.due,inv.status)?'var(--accent3)':'inherit'}">${fmt(inv.due)}</td>
-      <td class="amount">€${inv.amount.toLocaleString('en', {minimumFractionDigits:2})}</td>
-      <td><span class="badge badge-${inv.status}"><span class="dot"></span>${inv.status}</span></td>
-      <td>
-        <div style="display:flex;gap:6px">
-          ${inv.fileData ? `<button onclick="event.stopPropagation();viewFile(${inv.id})" style="background:none;border:none;cursor:pointer;color:var(--accent2);font-size:16px" title="View file">📄</button>` : ''}
-          <button onclick="event.stopPropagation();deleteInvoice(${inv.id})" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:14px" title="Delete">✕</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+// ── EMAIL ──
+function updateEmailSelect(){
+  const sel=document.getElementById('email-inv-select');
+  sel.innerHTML='<option value="">— Choose invoice —</option>'+
+    invoices.map(i=>`<option value="${i.id}">${i.num} — ${i.vendor} — €${i.amount.toFixed(2)}</option>`).join('');
 }
 
-function selectRow(id) {
-  selectedInvoiceId = selectedInvoiceId === id ? null : id;
-  if (selectedInvoiceId) {
-    document.getElementById('emailInvoiceSelect').value = selectedInvoiceId;
-  }
-  renderTable(invoices);
+function previewEmailInv(){
+  const inv=invoices.find(i=>i.id===parseInt(document.getElementById('email-inv-select').value));
+  const p=document.getElementById('email-inv-preview');
+  if(!inv){p.style.display='none';return;}
+  p.style.display='block';
+  p.innerHTML=`
+    <div class="ep-row"><span class="ep-label">Vendor</span><span class="ep-val">${inv.vendor}</span></div>
+    <div class="ep-row"><span class="ep-label">Invoice #</span><span class="ep-val">${inv.num}</span></div>
+    <div class="ep-row"><span class="ep-label">Category</span><span class="ep-val">${inv.category}</span></div>
+    <div class="ep-row"><span class="ep-label">Due Date</span><span class="ep-val">${fd(inv.due)}</span></div>
+    ${inv.notes?`<div class="ep-row"><span class="ep-label">Note</span><span class="ep-val" style="color:var(--accent2)">${inv.notes}</span></div>`:''}
+    <div class="ep-row"><span class="ep-label">Amount</span><span class="ep-val" style="color:var(--accent)">€${inv.amount.toFixed(2)}</span></div>`;
 }
 
-function viewFile(id) {
-  const inv = invoices.find(i => i.id === id);
-  if (!inv || !inv.fileData) return;
-  const w = window.open();
-  if (inv.fileData.startsWith('data:application/pdf')) {
-    w.document.write(`<iframe src="${inv.fileData}" style="width:100%;height:100vh;border:none"></iframe>`);
-  } else {
-    w.document.write(`<img src="${inv.fileData}" style="max-width:100%">`);
-  }
+function openSendModal(){
+  const email=document.getElementById('acct-email').value.trim();
+  const invId=parseInt(document.getElementById('email-inv-select').value);
+  const inv=invoices.find(i=>i.id===invId);
+  if(!email){toast('⚠️ Enter accountant email');return;}
+  if(!inv){toast('⚠️ Select an invoice');return;}
+  const msg=document.getElementById('email-msg').value||'Please process the attached invoice.';
+  const cc=document.getElementById('email-cc').value.trim();
+  document.getElementById('sendPreview').innerHTML=`
+    <p style="font-size:12px;color:var(--text2);margin-bottom:12px">To: <strong>${email}</strong>${cc?' · CC: '+cc:''}</p>
+    <div class="email-preview">
+      <div class="ep-row"><span class="ep-label">Subject</span><span class="ep-val">Invoice ${inv.num} — ${inv.vendor} — €${inv.amount.toFixed(2)}</span></div>
+      <div class="ep-row"><span class="ep-label">Invoice #</span><span class="ep-val">${inv.num}</span></div>
+      <div class="ep-row"><span class="ep-label">Vendor</span><span class="ep-val">${inv.vendor}</span></div>
+      <div class="ep-row"><span class="ep-label">Category</span><span class="ep-val">${inv.category}</span></div>
+      <div class="ep-row"><span class="ep-label">Due Date</span><span class="ep-val">${fd(inv.due)}</span></div>
+      <div class="ep-row"><span class="ep-label">Amount</span><span class="ep-val">€${inv.amount.toFixed(2)}</span></div>
+      ${inv.link?`<div class="ep-row"><span class="ep-label">Document</span><span class="ep-val">${inv.link}</span></div>`:''}
+    </div>
+    <p style="font-size:11px;color:var(--text3)">Message: "${msg}"</p>`;
+  document.getElementById('sendOverlay').classList.add('open');
 }
 
-function deleteInvoice(id) {
-  invoices = invoices.filter(i => i.id !== id);
-  if (selectedInvoiceId === id) selectedInvoiceId = null;
-  save();
-  renderTable(invoices);
-  updateStats();
-  updateEmailSelect();
-  showToast('🗑️ Invoice deleted');
+function doSendEmail(){
+  const email=document.getElementById('acct-email').value.trim();
+  const cc=document.getElementById('email-cc').value.trim();
+  const invId=parseInt(document.getElementById('email-inv-select').value);
+  const inv=invoices.find(i=>i.id===invId);
+  const msg=document.getElementById('email-msg').value||'Please process the attached invoice.';
+  const subj=encodeURIComponent(`Invoice ${inv.num} — ${inv.vendor} — €${inv.amount.toFixed(2)}`);
+  const body=encodeURIComponent(`Hi,\n\n${msg}\n\n─────────────────────\nInvoice #:    ${inv.num}\nVendor:       ${inv.vendor}\nCategory:     ${inv.category}\nInvoice Date: ${fd(inv.date)}\nDue Date:     ${fd(inv.due)}\nAmount:       €${inv.amount.toFixed(2)}\n${inv.vat?'VAT:          '+inv.vat+'\n':''}${inv.notes?'\n⚠️ Note: '+inv.notes+'\n':''}${inv.link?'\nDocument: '+inv.link+'\n':''}\n─────────────────────\n\nBest regards,\nEligens`);
+  let mailto=`mailto:${email}?subject=${subj}&body=${body}`;
+  if(cc) mailto+=`&cc=${encodeURIComponent(cc)}`;
+  window.location.href=mailto;
+  closeOverlay('sendOverlay');
+  toast('📧 Email client opened!');
 }
 
-function updateStats() {
-  const total = invoices.length;
-  const amount = invoices.reduce((s, i) => s + i.amount, 0);
-  const pending = invoices.filter(i => i.status === 'pending').length;
-  const overdue = invoices.filter(i => i.status === 'overdue').length;
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('statAmount').textContent = '€' + amount.toLocaleString('en', {minimumFractionDigits:2});
-  document.getElementById('statPending').textContent = pending;
-  document.getElementById('statOverdue').textContent = overdue;
+// ── REPORTS ──
+function renderReports(){
+  const paid=invoices.filter(i=>getStatus(i)==='paid');
+  const unpaid=invoices.filter(i=>getStatus(i)==='unpaid');
+  const overdue=invoices.filter(i=>getStatus(i)==='overdue');
+  const total=invoices.reduce((s,i)=>s+i.amount,0);
+  document.getElementById('report-stats').innerHTML=`
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val b">${invoices.length}</div><div class="stat-sub">€${total.toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Paid</div><div class="stat-val g">${paid.length}</div><div class="stat-sub">€${paid.reduce((s,i)=>s+i.amount,0).toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Unpaid</div><div class="stat-val o">${unpaid.length}</div><div class="stat-sub">€${unpaid.reduce((s,i)=>s+i.amount,0).toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Overdue</div><div class="stat-val r">${overdue.length}</div><div class="stat-sub">€${overdue.reduce((s,i)=>s+i.amount,0).toFixed(2)}</div></div>
+    <div class="stat"><div class="stat-label">Paid Rate</div><div class="stat-val g">${Math.round(paid.length/invoices.length*100)}%</div><div class="stat-sub">by count</div></div>`;
+
+  bar('status-chart',[
+    {label:`Paid (${paid.length})`,val:paid.reduce((s,i)=>s+i.amount,0),color:'var(--accent)'},
+    {label:`Unpaid (${unpaid.length})`,val:unpaid.reduce((s,i)=>s+i.amount,0),color:'var(--accent2)'},
+    {label:`Overdue (${overdue.length})`,val:overdue.reduce((s,i)=>s+i.amount,0),color:'var(--red)'},
+  ]);
+
+  const cats={};invoices.forEach(i=>{cats[i.category]=(cats[i.category]||0)+i.amount;});
+  bar('cat-chart',Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([l,v])=>({label:l,val:v,color:'var(--blue)'})));
+
+  const vends={};invoices.forEach(i=>{vends[i.vendor]=(vends[i.vendor]||0)+i.amount;});
+  bar('vendor-chart',Object.entries(vends).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l,v])=>({label:l,val:v,color:'var(--accent2)'})));
+
+  const months={};invoices.forEach(i=>{if(i.date){const m=i.date.substr(0,7);months[m]=(months[m]||0)+i.amount;}});
+  bar('monthly-chart',Object.entries(months).sort((a,b)=>a[0]>b[0]?1:-1).map(([l,v])=>({label:fm(l),val:v,color:'var(--accent)'})));
+
+  document.getElementById('paid-table').innerHTML=paid.map(i=>`<tr><td class="bold">${i.num}</td><td style="font-size:12px">${i.vendor}</td><td class="amt">€${i.amount.toFixed(2)}</td><td style="font-size:11px;color:var(--accent)">${fd(i.paidDate)}</td></tr>`).join('');
+  const all=invoices.filter(i=>getStatus(i)!=='paid').sort((a,b)=>new Date(a.due||'9999')-new Date(b.due||'9999'));
+  document.getElementById('unpaid-table').innerHTML=all.map(i=>`<tr><td class="bold">${i.num}</td><td style="font-size:12px">${i.vendor}</td><td class="amt">€${i.amount.toFixed(2)}</td><td style="font-size:11px;color:${getStatus(i)==='overdue'?'var(--red)':'inherit'}">${fd(i.due)}</td><td><span class="badge badge-${getStatus(i)}"><span class="dot"></span>${getStatus(i)}</span></td></tr>`).join('');
 }
 
-function updateEmailSelect() {
-  const sel = document.getElementById('emailInvoiceSelect');
-  sel.innerHTML = '<option value="">— Choose invoice —</option>' +
-    invoices.map(i => `<option value="${i.id}">${i.num} — ${i.vendor} — €${i.amount.toFixed(2)}</option>`).join('');
+function bar(id,items){
+  const max=Math.max(...items.map(i=>i.val))||1;
+  document.getElementById(id).innerHTML=items.map(({label,val,color})=>`
+    <div class="bar-row">
+      <div class="bar-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${val/max*100}%;background:${color}"></div></div>
+      <div class="bar-val">€${val.toFixed(0)}</div>
+    </div>`).join('');
 }
 
-function filterInvoices(q) {
-  const filtered = q ? invoices.filter(i =>
-    i.num.toLowerCase().includes(q.toLowerCase()) ||
-    i.vendor.toLowerCase().includes(q.toLowerCase()) ||
-    i.status.toLowerCase().includes(q.toLowerCase())
-  ) : invoices;
-  renderTable(filtered);
+// ── HELPERS ──
+function fd(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}.${m}.${y}`;}catch(e){return d;}}
+function fm(m){try{const[y,mo]=m.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)]+' '+y.slice(2);}catch(e){return m;}}
+
+function populateMonthFilter(){
+  const months=[...new Set(invoices.map(i=>i.date?i.date.substr(0,7):null).filter(Boolean))].sort().reverse();
+  const sel=document.getElementById('filt-month');
+  months.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=fm(m);sel.appendChild(o);});
 }
 
-function openEmailModal() {
-  const email = document.getElementById('accountantEmail').value.trim();
-  const invId = parseInt(document.getElementById('emailInvoiceSelect').value);
-  if (!email) { showToast('⚠️ Enter accountant email', false); return; }
-  if (!invId) { showToast('⚠️ Select an invoice', false); return; }
-  const inv = invoices.find(i => i.id === invId);
-  if (!inv) return;
-
-  document.getElementById('modalTo').textContent = email;
-  document.getElementById('emailPreview').innerHTML = `
-    <div class="inv-row"><span class="inv-label">Invoice #</span><span class="inv-val">${inv.num}</span></div>
-    <div class="inv-row"><span class="inv-label">Vendor</span><span class="inv-val">${inv.vendor}</span></div>
-    <div class="inv-row"><span class="inv-label">Invoice Date</span><span class="inv-val">${fmt(inv.date)}</span></div>
-    <div class="inv-row"><span class="inv-label">Due Date</span><span class="inv-val">${fmt(inv.due)}</span></div>
-    ${inv.fileName ? `<div class="inv-row"><span class="inv-label">Attachment</span><span class="inv-val" style="color:var(--accent)">📎 ${inv.fileName}</span></div>` : ''}
-    <div class="inv-row"><span class="inv-label">Total</span><span class="inv-val" style="color:var(--accent)">€${inv.amount.toFixed(2)}</span></div>
-  `;
-  document.getElementById('emailModal').classList.add('open');
+function exportCSV(){
+  const h=['Priority','Status','Invoice #','Vendor','Category','Invoice Date','Due Date','Amount EUR','Payment Date','VAT','Notes','Link'];
+  const rows=invoices.map(i=>[i.priority,getStatus(i),i.num,i.vendor,i.category,i.date,i.due||'',i.amount,i.paidDate||'',i.vat||'',i.notes||'',i.link||'']);
+  const csv=[h,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`eligens_invoices_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();toast('📊 CSV exported');
 }
 
-function closeModal() {
-  document.getElementById('emailModal').classList.remove('open');
-}
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
 
-function sendEmail() {
-  const email = document.getElementById('accountantEmail').value.trim();
-  const invId = parseInt(document.getElementById('emailInvoiceSelect').value);
-  const inv = invoices.find(i => i.id === invId);
-  const msg = document.getElementById('emailMessage').value || 'Please process the attached invoice.';
-
-  const subject = encodeURIComponent(`Invoice ${inv.num} from ${inv.vendor} — €${inv.amount.toFixed(2)}`);
-  const body = encodeURIComponent(
-    `Hi,\n\n${msg}\n\n` +
-    `Invoice #: ${inv.num}\nVendor: ${inv.vendor}\nDate: ${fmt(inv.date)}\nDue: ${fmt(inv.due)}\nAmount: €${inv.amount.toFixed(2)}\n` +
-    (inv.fileName ? `\nAttachment: ${inv.fileName}\n(Please upload manually if the file cannot be attached via mailto)` : '') +
-    `\n\nBest regards`
-  );
-
-  window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
-  closeModal();
-  showToast('📧 Email client opened!');
-}
-
-function exportCSV() {
-  if (!invoices.length) { showToast('⚠️ No invoices to export', false); return; }
-  const headers = ['Invoice #','Vendor','Date','Due Date','Amount','Status','Description','File'];
-  const rows = invoices.map(i => [i.num, i.vendor, i.date, i.due, i.amount, i.status, i.desc, i.fileName || '']);
-  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-  a.download = `invoices_${today}.csv`;
-  a.click();
-  showToast('📊 CSV exported');
-}
-
-function scrollToForm() {
-  document.getElementById('addPanel').scrollIntoView({behavior: 'smooth'});
-  document.getElementById('fInvNum').focus();
-}
-
-function fmt(d) {
-  if (!d) return '—';
-  const [y,m,day] = d.split('-');
-  return `${day}/${m}/${y}`;
-}
-
-function isDueClose(due, status) {
-  if (status === 'paid') return false;
-  const d = new Date(due);
-  const now = new Date();
-  return (d - now) < 3 * 24 * 60 * 60 * 1000;
-}
-
-function save() {
-  // Save without file data to avoid localStorage size issues for many files
-  const light = invoices.map(i => ({...i, fileData: i.fileData ? '[stored]' : null}));
-  try {
-    localStorage.setItem('inv_data', JSON.stringify(invoices));
-  } catch(e) {
-    // If too large, save without fileData
-    const noFiles = invoices.map(i => ({...i, fileData: null}));
-    localStorage.setItem('inv_data', JSON.stringify(noFiles));
-  }
-}
-
-function showToast(msg, success = true) {
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.style.borderColor = success ? 'var(--accent)' : 'var(--accent4)';
+function toast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastMsg').textContent=msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// Render initial
-renderTable(invoices);
-updateStats();
-updateEmailSelect();
-
-// Add some sample data if empty
-if (!invoices.length) {
-  const samples = [
-    {id:1, num:'INV-2024-001', vendor:'Office Supplies Ltd', date:'2024-11-01', due:'2024-11-30', amount:1250.00, status:'paid', desc:'Monthly supplies', fileName:null, fileData:null},
-    {id:2, num:'INV-2024-002', vendor:'Cloud Services Inc', date:'2024-11-15', due:'2024-12-15', amount:3400.50, status:'pending', desc:'Annual subscription', fileName:null, fileData:null},
-    {id:3, num:'INV-2024-003', vendor:'Marketing Agency', date:'2024-10-01', due:'2024-11-01', amount:8750.00, status:'overdue', desc:'Campaign Q4', fileName:null, fileData:null},
-  ];
-  invoices = samples;
-  renderTable(invoices);
-  updateStats();
-  updateEmailSelect();
+  setTimeout(()=>t.classList.remove('show'),3500);
 }
 </script>
 </body>
