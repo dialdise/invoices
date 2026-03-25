@@ -202,6 +202,7 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 .prio-M{background:var(--accent2-light);color:var(--accent2)}
 .prio-URGENT{background:#fdecea;color:var(--red);border:1px solid var(--red);animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600;text-transform:uppercase}
 .badge-paid{background:var(--accent-light);color:var(--accent)}
@@ -968,24 +969,53 @@ const SEED=[
 let invoices,nextId;
 
 function initApp(){
-  // Always load from localStorage first for instant render
-  invoices=JSON.parse(localStorage.getItem('eligens_inv')||'null')||SEED.map(i=>({...i}));
-  nextId=Math.max(...invoices.map(i=>i.id))+1;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  const hasDrive = !!localStorage.getItem('drive_client_id');
+  const hasLocal = !!localStorage.getItem('eligens_inv');
+
+  if(hasLocal){
+    // We have real saved data — load it immediately
+    invoices=JSON.parse(localStorage.getItem('eligens_inv'));
+  } else if(hasDrive){
+    // Drive is configured but no local data yet — show loading state, Drive will populate
+    invoices=[];
+    showDriveLoading(true);
+  } else {
+    // No Drive, no local — use SEED as starting data
+    invoices=SEED.map(i=>({...i}));
+  }
+
+  nextId=invoices.length ? Math.max(...invoices.map(i=>i.id))+1 : 94;
   buildVendorRegistryFromSeed();
   refreshAllCategorySelects();
   renderCatChips();
   populateMonthFilter();
   updateEmailSelect();
   renderAll();
-  // After render, try to load fresher data from Drive in background
+  // Always try to sync from Drive on startup (silent, background)
   setTimeout(driveLoadOnStartup, 1200);
 }
 
+function showDriveLoading(show){
+  const tbody = document.getElementById('invoiceBody');
+  const empty = document.getElementById('emptyMsg');
+  if(!tbody) return;
+  if(show){
+    tbody.innerHTML = '';
+    empty.style.display='block';
+    empty.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:10px"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div><div style="font-size:13px;color:var(--text2)">Loading from Google Drive…</div></div>';
+  } else {
+    empty.innerHTML='No invoices found';
+  }
+}
+
 function save(){
+  // Always save to localStorage (instant, reliable)
   localStorage.setItem('eligens_inv',JSON.stringify(invoices));
-  // Silent background sync to Drive if already authenticated
-  if(driveAccessToken){ driveSync().catch(()=>{}); }
+  // Also sync to Drive if authenticated (background, non-blocking)
+  if(driveAccessToken){
+    driveSync().catch(err=>console.warn('Auto-sync failed:',err));
+  }
 }
 
 // NAV
@@ -1692,30 +1722,23 @@ async function driveLoadOnStartup(){
     const data = await r.json();
     if(!data.invoices || !Array.isArray(data.invoices)) throw new Error('Invalid backup');
 
-    // Only update if Drive has MORE invoices or NEWER data than current localStorage
-    const localCount = invoices.length;
+    // Drive is ALWAYS the source of truth — always apply it
     const driveCount = data.invoices.length;
-    const localTotal = invoices.reduce((s,i)=>s+i.amount,0);
-    const driveTotal = data.invoices.reduce((s,i)=>s+i.amount,0);
-
-    if(driveCount > localCount || (driveCount === localCount && driveTotal !== localTotal)){
-      invoices = data.invoices;
-      nextId = Math.max(...invoices.map(i=>i.id), 0)+1;
-      localStorage.setItem('eligens_inv', JSON.stringify(invoices));
-      if(data.vendors) saveVendorRegistry(data.vendors);
-      if(data.categories) saveCategories(data.categories);
-      buildVendorRegistryFromSeed();
-      refreshAllCategorySelects();
-      renderCatChips();
-      populateMonthFilter();
-      updateEmailSelect();
-      renderAll();
-      const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      document.getElementById('driveLastSync').textContent = 'Loaded from Drive at '+now+' ('+driveCount+' invoices)';
-      toast('☁️ Data loaded from Google Drive ('+driveCount+' invoices)');
-    } else {
-      document.getElementById('driveLastSync').textContent = 'Up to date — '+localCount+' invoices';
-    }
+    invoices = data.invoices;
+    nextId = Math.max(...invoices.map(i=>i.id), 0)+1;
+    // Save to localStorage so next refresh is instant
+    localStorage.setItem('eligens_inv', JSON.stringify(invoices));
+    if(data.vendors) saveVendorRegistry(data.vendors);
+    if(data.categories) saveCategories(data.categories);
+    buildVendorRegistryFromSeed();
+    refreshAllCategorySelects();
+    renderCatChips();
+    populateMonthFilter();
+    updateEmailSelect();
+    showDriveLoading(false);
+    renderAll();
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('driveLastSync').textContent = 'Synced from Drive at '+now+' · '+driveCount+' invoices';
     setDriveStatus('done', new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
   } catch(err){
     console.warn('Drive load on startup failed:', err);
