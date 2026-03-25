@@ -257,6 +257,58 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
 
+/* ── VENDOR AUTOCOMPLETE ── */
+.ac-wrap{position:relative}
+.ac-dropdown{
+  position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,.10);
+  z-index:100;max-height:220px;overflow-y:auto;display:none;
+}
+.ac-dropdown.open{display:block}
+.ac-item{
+  padding:9px 12px;cursor:pointer;display:flex;
+  align-items:center;justify-content:space-between;
+  font-size:13px;border-bottom:1px solid var(--border);
+  transition:background .1s;
+}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.focused{background:var(--accent-light)}
+.ac-item-name{color:var(--text);font-weight:500}
+.ac-item-cat{
+  font-size:10px;font-weight:600;padding:2px 7px;
+  border-radius:4px;background:var(--blue-light);color:var(--blue);
+  flex-shrink:0;margin-left:8px;
+}
+.ac-item-new{color:var(--accent);font-style:italic}
+.ac-hint{
+  font-size:10px;color:var(--text3);margin-top:4px;
+  display:flex;align-items:center;gap:4px;
+}
+
+/* ── CATEGORY MANAGEMENT ── */
+.cat-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.cat-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:20px;font-size:12px;font-weight:600;
+  background:var(--blue-light);color:var(--blue);border:1px solid transparent;
+  transition:all .15s;
+}
+.cat-chip.builtin{opacity:.7;cursor:default}
+.cat-chip-del{
+  background:none;border:none;cursor:pointer;color:var(--text3);
+  font-size:13px;padding:0;line-height:1;margin-left:2px;
+  transition:color .12s;
+}
+.cat-chip-del:hover{color:var(--red)}
+.cat-add-row{display:flex;gap:8px}
+.cat-add-row input{flex:1}
+.cat-auto-note{
+  background:var(--accent-light);border:1px solid var(--accent);
+  border-radius:7px;padding:8px 12px;font-size:11px;color:var(--accent);
+  margin-bottom:14px;display:flex;align-items:center;gap:6px;
+}
+
 @media(max-width:900px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .report-grid{grid-template-columns:1fr}
@@ -352,7 +404,7 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
       <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" placeholder="Search vendor, invoice #…" oninput="applyFilters()"></div>
       <select class="filter" id="filt-status" onchange="applyFilters()"><option value="">All Statuses</option><option value="paid">Paid</option><option value="unpaid">Unpaid</option><option value="overdue">Overdue</option></select>
       <select class="filter" id="filt-priority" onchange="applyFilters()"><option value="">All Priorities</option><option value="URGENT">Urgent</option><option value="H">High</option><option value="M">Medium</option></select>
-      <select class="filter" id="filt-category" onchange="applyFilters()"><option value="">All Categories</option><option>Logistics</option><option>Security</option><option>Office Supplies</option><option>Cleaning</option><option>Utilities</option><option>Tax</option><option>Postal</option><option>Other</option></select>
+      <select class="filter" id="filt-category" onchange="applyFilters()"><option value="">All Categories</option></select>
       <select class="filter" id="filt-month" onchange="applyFilters()"><option value="">All Months</option></select>
       <div class="spacer"></div>
       <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
@@ -374,11 +426,23 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
         <div class="grid3">
           <div class="fg"><label>Priority</label><select class="fc" id="f-priority"><option value="">None</option><option value="M">Medium</option><option value="H">High</option><option value="URGENT">URGENT</option></select></div>
           <div class="fg"><label>Status *</label><select class="fc" id="f-status"><option value="unpaid">Unpaid</option><option value="paid">Paid</option><option value="overdue">Overdue</option></select></div>
-          <div class="fg"><label>Category *</label><select class="fc" id="f-category"><option>Logistics</option><option>Security</option><option>Office Supplies</option><option>Cleaning</option><option>Utilities</option><option>Tax</option><option>Postal</option><option>Other</option></select></div>
+          <div class="fg"><label>Category *</label><select class="fc" id="f-category"></select></div>
         </div>
         <div class="grid2">
           <div class="fg"><label>Invoice Number *</label><input class="fc" id="f-num" placeholder="e.g. INV-2026-001" type="text"></div>
-          <div class="fg"><label>Vendor / Company *</label><input class="fc" id="f-vendor" placeholder="Company name" type="text"></div>
+          <div class="fg">
+            <label>Vendor / Company *</label>
+            <div class="ac-wrap">
+              <input class="fc" id="f-vendor" placeholder="Type to search or add new…" type="text"
+                autocomplete="off"
+                oninput="acInput(this.value)"
+                onkeydown="acKeydown(event)"
+                onfocus="acInput(this.value)"
+                onblur="setTimeout(()=>acClose(),180)">
+              <div class="ac-dropdown" id="acDropdown"></div>
+            </div>
+            <div class="ac-hint">💡 Select existing company to auto-fill category</div>
+          </div>
         </div>
         <div class="grid3">
           <div class="fg"><label>Invoice Date *</label><input class="fc" id="f-date" type="date"></div>
@@ -467,6 +531,33 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
           <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span>Failed attempt lockout</span><span style="font-family:var(--mono);color:var(--text)">5 attempts → 15 min</span></div>
           <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Plain-text password stored</span><span style="font-family:var(--mono);color:var(--accent)">Never</span></div>
         </div>
+      </div>
+
+      <!-- Category management -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">🏷 Manage Categories</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Built-in categories cannot be deleted. Custom ones can be removed if no invoices use them.</div>
+        <div class="cat-auto-note">✨ When a vendor is selected from autocomplete, its last-used category is applied automatically</div>
+        <div class="cat-list" id="catChips"></div>
+        <div class="cat-add-row">
+          <input class="fc" id="newCatInput" placeholder="New category name…" type="text" onkeydown="if(event.key==='Enter')addCategory()">
+          <button class="btn btn-primary" onclick="addCategory()">+ Add</button>
+        </div>
+        <div id="catAddError" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
+      </div>
+
+      <!-- Backup & Restore -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">💾 Backup & Restore</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Export all your data as a JSON backup file. Import it any time to restore — even after uploading a new version of this file.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="exportBackup()" style="flex:1;justify-content:center;min-width:140px">⬇ Export Backup</button>
+          <label class="btn btn-ghost" style="flex:1;justify-content:center;min-width:140px;cursor:pointer">
+            ⬆ Import Backup
+            <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this)">
+          </label>
+        </div>
+        <div id="importStatus" style="font-size:11px;margin-top:8px;display:none"></div>
       </div>
 
       <!-- Danger zone -->
@@ -837,6 +928,9 @@ function initApp(){
   invoices=JSON.parse(localStorage.getItem('eligens_inv')||'null')||SEED.map(i=>({...i}));
   nextId=Math.max(...invoices.map(i=>i.id))+1;
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  buildVendorRegistryFromSeed();
+  refreshAllCategorySelects();
+  renderCatChips();
   populateMonthFilter();
   updateEmailSelect();
   renderAll();
@@ -852,6 +946,8 @@ function showPage(name,btn){
   if(btn) btn.classList.add('active');
   if(name==='report') renderReports();
   if(name==='invoices') renderAll();
+  if(name==='settings'){ renderCatChips(); refreshAllCategorySelects(); }
+  if(name==='add') refreshAllCategorySelects();
 }
 
 // RENDER
@@ -943,6 +1039,7 @@ function saveInvoice(){
   };
   if(eid){const idx=invoices.findIndex(i=>i.id===parseInt(eid));invoices[idx]=inv;toast('✅ Invoice updated');}
   else{invoices.unshift(inv);toast('✅ Invoice saved');}
+  updateVendorRegistry(inv.vendor, inv.category);
   save();resetForm();renderAll();
   showPage('invoices',document.querySelectorAll('.nav-tab')[0]);
 }
@@ -1098,6 +1195,256 @@ function exportCSV(){
   const csv=[h,...rows].map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`eligens_invoices_${new Date().toISOString().split('T')[0]}.csv`;a.click();
   toast('📊 CSV exported');
+}
+
+
+// ══════════════════════════════════════════
+// CATEGORIES — dynamic, persisted
+// ══════════════════════════════════════════
+const BUILTIN_CATS = ['Logistics','Security','Office Supplies','Cleaning','Utilities','Tax','Postal','Other'];
+
+function getCategories(){
+  const stored = JSON.parse(localStorage.getItem('eligens_cats')||'null');
+  if(!stored) return [...BUILTIN_CATS];
+  // Merge: builtins always present, plus stored customs
+  const customs = stored.filter(c=>!BUILTIN_CATS.includes(c));
+  return [...BUILTIN_CATS, ...customs];
+}
+
+function saveCategories(cats){
+  // Only persist custom ones (non-builtins)
+  const customs = cats.filter(c=>!BUILTIN_CATS.includes(c));
+  localStorage.setItem('eligens_cats', JSON.stringify([...BUILTIN_CATS,...customs]));
+}
+
+function addCategory(){
+  const inp = document.getElementById('newCatInput');
+  const errEl = document.getElementById('catAddError');
+  const name = inp.value.trim();
+  errEl.style.display='none';
+  if(!name){ errEl.textContent='Enter a category name.'; errEl.style.display='block'; return; }
+  const cats = getCategories();
+  if(cats.map(c=>c.toLowerCase()).includes(name.toLowerCase())){
+    errEl.textContent='Category already exists.'; errEl.style.display='block'; return;
+  }
+  const newCats = [...cats, name];
+  saveCategories(newCats);
+  inp.value='';
+  renderCatChips();
+  refreshAllCategorySelects();
+  toast('✅ Category "'+name+'" added');
+}
+
+function deleteCategory(name){
+  if(BUILTIN_CATS.includes(name)) return;
+  // Check if any invoice uses it
+  const inUse = invoices.some(i=>i.category===name);
+  if(inUse){ toast('⚠️ Cannot delete — '+invoices.filter(i=>i.category===name).length+' invoice(s) use this category'); return; }
+  const cats = getCategories().filter(c=>c!==name);
+  saveCategories(cats);
+  renderCatChips();
+  refreshAllCategorySelects();
+  toast('🗑 Category "'+name+'" removed');
+}
+
+function renderCatChips(){
+  const container = document.getElementById('catChips');
+  if(!container) return;
+  const cats = getCategories();
+  container.innerHTML = cats.map(c=>{
+    const isBuiltin = BUILTIN_CATS.includes(c);
+    const inUse = invoices ? invoices.some(i=>i.category===c) : false;
+    return `<span class="cat-chip${isBuiltin?' builtin':''}">
+      ${c}
+      ${!isBuiltin ? `<button class="cat-chip-del" onclick="deleteCategory('${c.replace(/'/g,"\'")}') " title="Remove">✕</button>` : ''}
+    </span>`;
+  }).join('');
+}
+
+function refreshAllCategorySelects(){
+  const cats = getCategories();
+  const opts = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Add form
+  const fcat = document.getElementById('f-category');
+  if(fcat){ const cur=fcat.value; fcat.innerHTML=opts; fcat.value=cats.includes(cur)?cur:cats[0]; }
+
+  // Filter
+  const filtCat = document.getElementById('filt-category');
+  if(filtCat){ const cur=filtCat.value; filtCat.innerHTML='<option value="">All Categories</option>'+opts; filtCat.value=cur; }
+}
+
+// ══════════════════════════════════════════
+// VENDOR REGISTRY — remembers vendor→category
+// ══════════════════════════════════════════
+function getVendorRegistry(){
+  return JSON.parse(localStorage.getItem('eligens_vendors')||'{}');
+}
+
+function saveVendorRegistry(reg){
+  localStorage.setItem('eligens_vendors', JSON.stringify(reg));
+}
+
+function buildVendorRegistryFromSeed(){
+  // Build from existing invoices if registry is empty
+  const reg = getVendorRegistry();
+  let changed = false;
+  invoices.forEach(inv=>{
+    if(inv.vendor && inv.category && !reg[inv.vendor]){
+      reg[inv.vendor] = inv.category;
+      changed = true;
+    }
+  });
+  if(changed) saveVendorRegistry(reg);
+  return reg;
+}
+
+function updateVendorRegistry(vendor, category){
+  if(!vendor) return;
+  const reg = getVendorRegistry();
+  reg[vendor] = category;
+  saveVendorRegistry(reg);
+}
+
+function getKnownVendors(){
+  // All unique vendors from invoices + registry keys, sorted
+  const fromInvoices = [...new Set(invoices.map(i=>i.vendor).filter(Boolean))];
+  const fromRegistry = Object.keys(getVendorRegistry());
+  return [...new Set([...fromInvoices, ...fromRegistry])].sort((a,b)=>a.localeCompare(b));
+}
+
+// ══════════════════════════════════════════
+// AUTOCOMPLETE
+// ══════════════════════════════════════════
+let acFocusIdx = -1;
+
+function acInput(val){
+  const dropdown = document.getElementById('acDropdown');
+  const reg = getVendorRegistry();
+  const vendors = getKnownVendors();
+  const q = val.trim().toLowerCase();
+
+  // Filter matching vendors
+  let matches = vendors.filter(v=> !q || v.toLowerCase().includes(q));
+
+  // Build items
+  let items = matches.map(v=>({name:v, cat:reg[v]||'', isNew:false}));
+
+  // If typed value doesn't exactly match any existing vendor, show "Add new" option
+  const exactMatch = vendors.some(v=>v.toLowerCase()===q);
+  if(q && !exactMatch){
+    items.push({name:val.trim(), cat:'', isNew:true});
+  }
+
+  if(!items.length){ acClose(); return; }
+
+  acFocusIdx = -1;
+  dropdown.innerHTML = items.map((item,i)=>`
+    <div class="ac-item${item.isNew?' ac-item-new':''}"
+      data-idx="${i}"
+      data-name="${item.name.replace(/"/g,'&quot;')}"
+      data-cat="${item.cat}"
+      onmousedown="acSelect('${item.name.replace(/'/g,"\'")}','${item.cat.replace(/'/g,"\'")}')">
+      <span class="ac-item-name">${item.isNew ? '➕ Add "'+item.name+'"' : item.name}</span>
+      ${item.cat ? `<span class="ac-item-cat">${item.cat}</span>` : ''}
+    </div>`).join('');
+  dropdown.classList.add('open');
+}
+
+function acSelect(name, cat){
+  document.getElementById('f-vendor').value = name;
+  acClose();
+  if(cat){
+    const catSel = document.getElementById('f-category');
+    const cats = getCategories();
+    if(cats.includes(cat)) catSel.value = cat;
+  }
+  // Focus next field
+  document.getElementById('f-date').focus();
+}
+
+function acClose(){
+  const d = document.getElementById('acDropdown');
+  if(d) d.classList.remove('open');
+  acFocusIdx = -1;
+}
+
+function acKeydown(e){
+  const dropdown = document.getElementById('acDropdown');
+  const items = dropdown.querySelectorAll('.ac-item');
+  if(!dropdown.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    acFocusIdx = Math.min(acFocusIdx+1, items.length-1);
+    acHighlight(items);
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    acFocusIdx = Math.max(acFocusIdx-1, 0);
+    acHighlight(items);
+  } else if(e.key==='Enter' && acFocusIdx>=0){
+    e.preventDefault();
+    const item = items[acFocusIdx];
+    acSelect(item.dataset.name, item.dataset.cat);
+  } else if(e.key==='Escape'){
+    acClose();
+  }
+}
+
+function acHighlight(items){
+  items.forEach((el,i)=> el.classList.toggle('focused', i===acFocusIdx));
+  if(acFocusIdx>=0) items[acFocusIdx].scrollIntoView({block:'nearest'});
+}
+
+// ══════════════════════════════════════════
+// BACKUP & RESTORE
+// ══════════════════════════════════════════
+function exportBackup(){
+  const payload = {
+    version: 2,
+    exported: new Date().toISOString(),
+    invoices: invoices,
+    vendors: getVendorRegistry(),
+    categories: getCategories()
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'eligens-backup-' + new Date().toISOString().split('T')[0] + '.json';
+  a.click();
+  toast('💾 Backup exported successfully');
+}
+
+function importBackup(input){
+  const file = input.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('importStatus');
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!data.invoices || !Array.isArray(data.invoices)) throw new Error('Invalid backup file');
+      if(!confirm('Import ' + data.invoices.length + ' invoices from backup dated ' + (data.exported||'unknown') + '? This will REPLACE your current data.')) return;
+      invoices = data.invoices;
+      nextId = Math.max(...invoices.map(i=>i.id), 0) + 1;
+      save();
+      if(data.vendors) saveVendorRegistry(data.vendors);
+      if(data.categories) saveCategories(data.categories);
+      renderAll();
+      populateMonthFilter();
+      refreshAllCategorySelects();
+      renderCatChips();
+      statusEl.style.display = 'block';
+      statusEl.style.color = 'var(--accent)';
+      statusEl.textContent = '✅ Restored ' + invoices.length + ' invoices successfully';
+      toast('✅ Backup restored — ' + invoices.length + ' invoices loaded');
+    } catch(err) {
+      statusEl.style.display = 'block';
+      statusEl.style.color = 'var(--red)';
+      statusEl.textContent = '❌ Error: ' + err.message;
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 function togglePw(id,btn){
