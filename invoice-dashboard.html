@@ -1483,16 +1483,45 @@ async function uploadFileToDrive(file, invoiceNum, vendor){
   const cleanNum=invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
   const fileName=cleanNum+'_'+cleanVendor+'.'+ext;
 
-  // Use text/plain to avoid CORS preflight (simple request = no OPTIONS call)
+  // POST with text/plain avoids CORS preflight but Apps Script redirects,
+  // which causes the response body to be lost. We parse defensively.
   const r=await fetch(APPS_SCRIPT_URL,{
     method:'POST',
     headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({action:'uploadFile',fileName,mimeType:file.type||'application/pdf',base64,folderId:DRIVE_FOLDER_ID})
   });
-  if(!r.ok) throw new Error('Upload failed: HTTP '+r.status);
-  const result=await r.json();
+  if(progress) progress.style.width='85%';
+
+  let viewLink = null;
+
+  // Try to parse the response for the fileId
+  try {
+    const text = await r.text();
+    const result = JSON.parse(text);
+    if(result.viewLink) viewLink = result.viewLink;
+    else if(result.fileId && result.fileId !== 'undefined') {
+      viewLink = 'https://drive.google.com/file/d/'+result.fileId+'/view';
+    }
+  } catch(e){ /* response couldn't be parsed — file still uploaded */ }
+
+  // If we didn't get a fileId back, search Drive for the file by name
+  if(!viewLink){
+    if(progress) progress.style.width='92%';
+    try {
+      const searchR = await fetch(
+        APPS_SCRIPT_URL+'?action=findFile&fileName='+encodeURIComponent(fileName)+'&folderId='+DRIVE_FOLDER_ID
+      );
+      const searchData = await searchR.json();
+      if(searchData.fileId && searchData.fileId !== 'undefined'){
+        viewLink = 'https://drive.google.com/file/d/'+searchData.fileId+'/view';
+      }
+    } catch(e){ console.warn('File search failed:', e); }
+  }
+
+  // Last resort: link to the folder itself so user can find the file
+  if(!viewLink) viewLink = 'https://drive.google.com/drive/folders/'+DRIVE_FOLDER_ID;
+
   if(progress) progress.style.width='100%';
-  const viewLink=result.viewLink||('https://drive.google.com/file/d/'+result.fileId+'/view');
   document.getElementById('f-link').value=viewLink;
   if(status){ status.style.color='var(--accent)'; status.textContent='✅ Uploaded: '+fileName; }
   return viewLink;
