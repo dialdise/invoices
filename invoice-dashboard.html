@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Eligens — Invoices</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ── TOKENS ── */
 :root{
@@ -406,8 +405,8 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
     </div>
     <div class="nav-right">
       <span class="session-bar" id="sessionTimer">⏱ 8h 00m</span>
-      <button id="navDriveBtn" onclick="driveSync()" title="Sync to Google Drive" style="display:none;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;display:none;align-items:center;gap:5px">
-        <span id="navDriveIcon">☁️</span> <span id="navDriveLabel">Drive</span>
+      <button onclick="driveSyncBackup()" title="Sync to Drive" id="navDriveBtn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;align-items:center;gap:5px;display:none">
+        ☁️ <span id="navDriveLabel">Sync</span>
       </button>
       <span class="nav-user" id="navUser"></span>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -584,40 +583,36 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
       </div>
 
       <!-- Google Drive Sync -->
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)" id="driveSection">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">☁️ Google Drive Sync</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:16px">Saves your invoices to <strong>eligens-backup.json</strong> in your Google Drive. Sign in once — then sync with one click anytime.</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Invoice files upload to your shared Drive folder automatically. The backup JSON syncs via a Google Apps Script — no login needed.</div>
 
-        <!-- Step 1: Client ID input (shown until configured) -->
-        <div id="driveSetup">
-          <div style="background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-bottom:14px;line-height:1.6">
-            <strong>One-time setup:</strong> You need a Google OAuth Client ID.<br>
-            1. Go to <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a> → New Project<br>
-            2. APIs & Services → Enable <strong>Google Drive API</strong><br>
-            3. OAuth consent screen → External → add your email<br>
-            4. Credentials → OAuth 2.0 Client ID → Web app → add <strong id="driveOriginHint"></strong> to Authorized JS origins<br>
-            5. Copy the Client ID and paste below
-          </div>
-          <div class="fg">
-            <label>Google OAuth Client ID</label>
-            <input class="fc" id="driveClientId" type="text" placeholder="xxxxxxx.apps.googleusercontent.com" style="font-family:var(--mono);font-size:11px">
-          </div>
-          <button class="btn btn-primary" onclick="saveDriveClientId()" style="width:100%;justify-content:center">Save & Connect Google Drive</button>
+        <!-- Apps Script URL setup -->
+        <div style="background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-bottom:14px;line-height:1.8">
+          <strong>One-time setup (5 min):</strong><br>
+          1. Go to <a href="https://script.google.com" target="_blank" style="color:var(--blue);font-weight:600">script.google.com</a> → New project<br>
+          2. Paste the Apps Script code (copy from below) → Save<br>
+          3. Deploy → New deployment → Web app → Execute as <strong>Me</strong> → Anyone → Deploy<br>
+          4. Copy the web app URL and paste it below
         </div>
 
-        <!-- Drive controls (shown after Client ID saved) -->
-        <div id="driveControls" style="display:none">
-          <div id="driveStatus" style="font-size:12px;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px">
-            <span id="driveStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0"></span>
-            <span id="driveStatusText">Not signed in</span>
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-primary" id="driveSyncBtn" onclick="driveSync()" style="flex:2;justify-content:center">☁️ Sync to Drive</button>
-            <button class="btn btn-ghost" id="driveSignOutBtn" onclick="driveSignOut()" style="flex:1;justify-content:center;display:none">Sign Out</button>
-          </div>
-          <div style="font-size:10px;color:var(--text3);margin-top:8px" id="driveLastSync"></div>
-          <button onclick="resetDriveSetup()" style="background:none;border:none;font-size:10px;color:var(--text3);cursor:pointer;margin-top:6px;padding:0;text-decoration:underline">Change Client ID</button>
+        <div class="fg">
+          <label>Apps Script Web App URL</label>
+          <input class="fc" id="appsScriptUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" style="font-family:var(--mono);font-size:11px">
         </div>
+
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <button class="btn btn-primary" onclick="saveAppsScriptUrl()" style="flex:1;justify-content:center">Save URL</button>
+          <button class="btn btn-ghost" onclick="testAppsScript()" style="flex:1;justify-content:center">Test Connection</button>
+        </div>
+
+        <div id="appsScriptStatus" style="font-size:11px;margin-bottom:12px;display:none"></div>
+
+        <div style="display:flex;gap:10px">
+          <button class="btn btn-primary" onclick="driveSyncBackup()" id="driveSyncBtn" style="flex:2;justify-content:center">☁️ Sync Backup to Drive</button>
+          <a href="https://drive.google.com/drive/folders/1O6-BSraooksHEK7AmOmYWtke7yQx1aYE" target="_blank" class="btn btn-ghost" style="flex:1;justify-content:center;text-decoration:none">📁 Open Folder</a>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:8px" id="driveLastSync"></div>
       </div>
 
       <!-- Local Backup & Restore -->
@@ -1044,9 +1039,9 @@ function showDriveLoading(show){
 function save(){
   // Always save to localStorage (instant, reliable)
   localStorage.setItem('eligens_inv',JSON.stringify(invoices));
-  // Also sync to Drive if authenticated (background, non-blocking)
-  if(driveAccessToken){
-    driveSync().catch(err=>console.warn('Auto-sync failed:',err));
+  // Auto-sync to Drive via Apps Script if configured (background, non-blocking)
+  if(getAppsScriptUrl()){
+    driveSyncBackup().catch(err=>console.warn('Auto Drive sync failed:',err));
   }
 }
 
@@ -1143,16 +1138,19 @@ async function saveInvoice(){
 
   let link=document.getElementById('f-link').value.trim();
 
-  // If a file is selected and Drive is authenticated, upload it first
-  if(pendingFile && driveAccessToken){
-    try {
-      const uploadedLink = await uploadInvoiceFile(pendingFile, num, vendor);
-      if(uploadedLink) link = uploadedLink;
-    } catch(e){
-      toast('⚠️ File upload failed, saving without attachment');
+  // If a file is selected, upload it to Drive via Apps Script
+  if(pendingFile){
+    if(getAppsScriptUrl()){
+      try {
+        const uploadedLink = await uploadFileToDrive(pendingFile, num, vendor);
+        if(uploadedLink) link = uploadedLink;
+      } catch(e){
+        console.warn('Upload failed:', e);
+        toast('⚠️ File upload failed: '+e.message+'. Invoice saved without attachment.');
+      }
+    } else {
+      toast('⚠️ Configure Apps Script URL in Settings to upload files to Drive.');
     }
-  } else if(pendingFile && !driveAccessToken){
-    toast('⚠️ Sign into Drive first to upload files. Link saved as-is.');
   }
 
   const eid=document.getElementById('editId').value;
@@ -1344,6 +1342,516 @@ function exportCSV(){
 }
 
 
+
+// ══════════════════════════════════════════
+// FILE ATTACHMENT & DRIVE UPLOAD
+// ══════════════════════════════════════════
+let pendingFile = null;
+let invoicesFolderId = null; // cached Google Drive folder ID
+
+// Drag & drop on upload zone
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('uploadZone');
+  if(!zone) return;
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if(f) setUploadFile(f);
+  });
+});
+
+function handleFileSelect(input){
+  if(input.files[0]) setUploadFile(input.files[0]);
+}
+
+function setUploadFile(file){
+  const allowed = ['application/pdf','image/png','image/jpeg','image/jpg'];
+  if(!allowed.includes(file.type) && !file.name.match(/\.(pdf|png|jpg|jpeg)$/i)){
+    toast('⚠️ Only PDF, PNG, JPG files supported');
+    return;
+  }
+  pendingFile = file;
+  const zone = document.getElementById('uploadZone');
+  zone.classList.add('has-file');
+  document.getElementById('uploadFileName').textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  const status = document.getElementById('uploadStatus');
+  status.style.display='block';
+  if(getAppsScriptUrl()){
+    status.style.color='var(--accent)';
+    status.textContent='✅ Will upload to Google Drive on save';
+  } else {
+    status.style.color='var(--accent2)';
+    status.textContent='⚠️ Configure Apps Script URL in Settings to enable upload';
+  }
+}
+
+async function getOrCreateInvoicesFolder(){
+  if(invoicesFolderId) return invoicesFolderId;
+  const cached = localStorage.getItem('drive_invoices_folder_id');
+  if(cached){ invoicesFolderId=cached; return invoicesFolderId; }
+
+  // Search for existing folder
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${INVOICES_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)`,
+    {headers:{Authorization:'Bearer '+driveAccessToken}}
+  );
+  if(!searchRes.ok) throw new Error('Folder search failed: '+searchRes.status);
+  const searchData = await searchRes.json();
+
+  if(searchData.files && searchData.files.length > 0){
+    invoicesFolderId = searchData.files[0].id;
+  } else {
+    // Create the folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
+      body: JSON.stringify({name: INVOICES_FOLDER_NAME, mimeType:'application/vnd.google-apps.folder'})
+    });
+    if(!createRes.ok) throw new Error('Folder create failed: '+createRes.status);
+    const created = await createRes.json();
+    invoicesFolderId = created.id;
+  }
+  localStorage.setItem('drive_invoices_folder_id', invoicesFolderId);
+  return invoicesFolderId;
+}
+
+async function uploadInvoiceFile(file, invoiceNum, vendor){
+  const status = document.getElementById('uploadStatus');
+  const progress = document.getElementById('uploadProgress');
+
+  status.style.display='block';
+  status.style.color='var(--accent2)';
+  status.textContent='⬆️ Uploading to Google Drive…';
+  if(progress) progress.style.width='30%';
+
+  // Get or create the invoices folder
+  const folderId = await getOrCreateInvoicesFolder();
+  if(progress) progress.style.width='50%';
+
+  // Clean filename: InvoiceNum_Vendor.ext
+  const ext = file.name.split('.').pop();
+  const cleanVendor = vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const cleanNum = invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const fileName = `${cleanNum}_${cleanVendor}.${ext}`;
+
+  // Upload file to Drive folder
+  const meta = JSON.stringify({name: fileName, parents:[folderId]});
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], {type:'application/json'}));
+  form.append('file', file);
+
+  const uploadRes = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+    {method:'POST', headers:{Authorization:'Bearer '+driveAccessToken}, body:form}
+  );
+
+  if(!uploadRes.ok){
+    const err = await uploadRes.text();
+    throw new Error('Upload failed: '+uploadRes.status);
+  }
+
+  if(progress) progress.style.width='90%';
+  const uploaded = await uploadRes.json();
+
+  // Make file viewable by anyone with link (so the link works)
+  await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`, {
+    method:'POST',
+    headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
+    body: JSON.stringify({role:'reader', type:'anyone'})
+  });
+
+  if(progress) progress.style.width='100%';
+  const viewLink = `https://drive.google.com/file/d/${uploaded.id}/view`;
+
+  status.style.color='var(--accent)';
+  status.textContent='✅ Uploaded: '+fileName;
+
+  // Auto-fill the link field
+  document.getElementById('f-link').value = viewLink;
+
+  return viewLink;
+}
+
+// ══════════════════════════════════════════
+// CATEGORIES — dynamic, persisted
+// ══════════════════════════════════════════
+const BUILTIN_CATS = ['Logistics','Security','Office Supplies','Cleaning','Utilities','Tax','Postal','Other'];
+
+function getCategories(){
+  const stored = JSON.parse(localStorage.getItem('eligens_cats')||'null');
+  if(!stored) return [...BUILTIN_CATS];
+  // Merge: builtins always present, plus stored customs
+  const customs = stored.filter(c=>!BUILTIN_CATS.includes(c));
+  return [...BUILTIN_CATS, ...customs];
+}
+
+function saveCategories(cats){
+  // Only persist custom ones (non-builtins)
+  const customs = cats.filter(c=>!BUILTIN_CATS.includes(c));
+  localStorage.setItem('eligens_cats', JSON.stringify([...BUILTIN_CATS,...customs]));
+}
+
+function addCategory(){
+  const inp = document.getElementById('newCatInput');
+  const errEl = document.getElementById('catAddError');
+  const name = inp.value.trim();
+  errEl.style.display='none';
+  if(!name){ errEl.textContent='Enter a category name.'; errEl.style.display='block'; return; }
+  const cats = getCategories();
+  if(cats.map(c=>c.toLowerCase()).includes(name.toLowerCase())){
+    errEl.textContent='Category already exists.'; errEl.style.display='block'; return;
+  }
+  const newCats = [...cats, name];
+  saveCategories(newCats);
+  inp.value='';
+  renderCatChips();
+  refreshAllCategorySelects();
+  toast('✅ Category "'+name+'" added');
+}
+
+function deleteCategory(name){
+  if(BUILTIN_CATS.includes(name)) return;
+  // Check if any invoice uses it
+  const inUse = invoices.some(i=>i.category===name);
+  if(inUse){ toast('⚠️ Cannot delete — '+invoices.filter(i=>i.category===name).length+' invoice(s) use this category'); return; }
+  const cats = getCategories().filter(c=>c!==name);
+  saveCategories(cats);
+  renderCatChips();
+  refreshAllCategorySelects();
+  toast('🗑 Category "'+name+'" removed');
+}
+
+function renderCatChips(){
+  const container = document.getElementById('catChips');
+  if(!container) return;
+  const cats = getCategories();
+  container.innerHTML = cats.map(c=>{
+    const isBuiltin = BUILTIN_CATS.includes(c);
+    const inUse = invoices ? invoices.some(i=>i.category===c) : false;
+    return `<span class="cat-chip${isBuiltin?' builtin':''}">
+      ${c}
+      ${!isBuiltin ? `<button class="cat-chip-del" onclick="deleteCategory('${c.replace(/'/g,"\'")}') " title="Remove">✕</button>` : ''}
+    </span>`;
+  }).join('');
+}
+
+function refreshAllCategorySelects(){
+  const cats = getCategories();
+  const opts = cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  // Add form
+  const fcat = document.getElementById('f-category');
+  if(fcat){ const cur=fcat.value; fcat.innerHTML=opts; fcat.value=cats.includes(cur)?cur:cats[0]; }
+
+  // Filter
+  const filtCat = document.getElementById('filt-category');
+  if(filtCat){ const cur=filtCat.value; filtCat.innerHTML='<option value="">All Categories</option>'+opts; filtCat.value=cur; }
+}
+
+// ══════════════════════════════════════════
+// VENDOR REGISTRY — remembers vendor→category
+// ══════════════════════════════════════════
+function getVendorRegistry(){
+  return JSON.parse(localStorage.getItem('eligens_vendors')||'{}');
+}
+
+function saveVendorRegistry(reg){
+  localStorage.setItem('eligens_vendors', JSON.stringify(reg));
+}
+
+function buildVendorRegistryFromSeed(){
+  // Build from existing invoices if registry is empty
+  const reg = getVendorRegistry();
+  let changed = false;
+  invoices.forEach(inv=>{
+    if(inv.vendor && inv.category && !reg[inv.vendor]){
+      reg[inv.vendor] = inv.category;
+      changed = true;
+    }
+  });
+  if(changed) saveVendorRegistry(reg);
+  return reg;
+}
+
+function updateVendorRegistry(vendor, category){
+  if(!vendor) return;
+  const reg = getVendorRegistry();
+  reg[vendor] = category;
+  saveVendorRegistry(reg);
+}
+
+function getKnownVendors(){
+  // All unique vendors from invoices + registry keys, sorted
+  const fromInvoices = [...new Set(invoices.map(i=>i.vendor).filter(Boolean))];
+  const fromRegistry = Object.keys(getVendorRegistry());
+  return [...new Set([...fromInvoices, ...fromRegistry])].sort((a,b)=>a.localeCompare(b));
+}
+
+// ══════════════════════════════════════════
+// AUTOCOMPLETE
+// ══════════════════════════════════════════
+let acFocusIdx = -1;
+
+function acInput(val){
+  const dropdown = document.getElementById('acDropdown');
+  const reg = getVendorRegistry();
+  const vendors = getKnownVendors();
+  const q = val.trim().toLowerCase();
+
+  // Filter matching vendors
+  let matches = vendors.filter(v=> !q || v.toLowerCase().includes(q));
+
+  // Build items
+  let items = matches.map(v=>({name:v, cat:reg[v]||'', isNew:false}));
+
+  // If typed value doesn't exactly match any existing vendor, show "Add new" option
+  const exactMatch = vendors.some(v=>v.toLowerCase()===q);
+  if(q && !exactMatch){
+    items.push({name:val.trim(), cat:'', isNew:true});
+  }
+
+  if(!items.length){ acClose(); return; }
+
+  acFocusIdx = -1;
+  dropdown.innerHTML = items.map((item,i)=>`
+    <div class="ac-item${item.isNew?' ac-item-new':''}"
+      data-idx="${i}"
+      data-name="${item.name.replace(/"/g,'&quot;')}"
+      data-cat="${item.cat}"
+      onmousedown="acSelect('${item.name.replace(/'/g,"\'")}','${item.cat.replace(/'/g,"\'")}')">
+      <span class="ac-item-name">${item.isNew ? '➕ Add "'+item.name+'"' : item.name}</span>
+      ${item.cat ? `<span class="ac-item-cat">${item.cat}</span>` : ''}
+    </div>`).join('');
+  dropdown.classList.add('open');
+}
+
+function acSelect(name, cat){
+  document.getElementById('f-vendor').value = name;
+  acClose();
+  if(cat){
+    const catSel = document.getElementById('f-category');
+    const cats = getCategories();
+    if(cats.includes(cat)) catSel.value = cat;
+  }
+  // Focus next field
+  document.getElementById('f-date').focus();
+}
+
+function acClose(){
+  const d = document.getElementById('acDropdown');
+  if(d) d.classList.remove('open');
+  acFocusIdx = -1;
+}
+
+function acKeydown(e){
+  const dropdown = document.getElementById('acDropdown');
+  const items = dropdown.querySelectorAll('.ac-item');
+  if(!dropdown.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    acFocusIdx = Math.min(acFocusIdx+1, items.length-1);
+    acHighlight(items);
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    acFocusIdx = Math.max(acFocusIdx-1, 0);
+    acHighlight(items);
+  } else if(e.key==='Enter' && acFocusIdx>=0){
+    e.preventDefault();
+    const item = items[acFocusIdx];
+    acSelect(item.dataset.name, item.dataset.cat);
+  } else if(e.key==='Escape'){
+    acClose();
+  }
+}
+
+function acHighlight(items){
+  items.forEach((el,i)=> el.classList.toggle('focused', i===acFocusIdx));
+  if(acFocusIdx>=0) items[acFocusIdx].scrollIntoView({block:'nearest'});
+}
+
+
+// ══════════════════════════════════════════
+// GOOGLE DRIVE SYNC (via Apps Script — no login needed)
+// ══════════════════════════════════════════
+
+function getAppsScriptUrl(){
+  return localStorage.getItem('apps_script_url')||'';
+}
+
+function saveAppsScriptUrl(){
+  const url = document.getElementById('appsScriptUrl').value.trim();
+  if(!url || !url.includes('script.google.com')){
+    showAppsScriptStatus('⚠️ Paste a valid Apps Script web app URL', 'var(--red)');
+    return;
+  }
+  localStorage.setItem('apps_script_url', url);
+  // Show nav button
+  document.getElementById('navDriveBtn').style.display='flex';
+  showAppsScriptStatus('✅ URL saved', 'var(--accent)');
+  toast('✅ Apps Script URL saved');
+}
+
+function showAppsScriptStatus(msg, color){
+  const el = document.getElementById('appsScriptStatus');
+  if(!el) return;
+  el.style.display='block';
+  el.style.color=color||'var(--text2)';
+  el.textContent=msg;
+}
+
+async function testAppsScript(){
+  const url = getAppsScriptUrl();
+  if(!url){ showAppsScriptStatus('⚠️ Save a URL first', 'var(--red)'); return; }
+  showAppsScriptStatus('⏳ Testing connection…', 'var(--accent2)');
+  try {
+    const r = await fetch(url+'?action=ping');
+    const text = await r.text();
+    if(text.includes('pong') || r.ok){
+      showAppsScriptStatus('✅ Connection works!', 'var(--accent)');
+      toast('✅ Apps Script connected successfully');
+    } else {
+      showAppsScriptStatus('⚠️ Unexpected response: '+text.substring(0,60), 'var(--accent2)');
+    }
+  } catch(e){
+    showAppsScriptStatus('❌ Connection failed: '+e.message, 'var(--red)');
+  }
+}
+
+async function driveSyncBackup(){
+  const url = getAppsScriptUrl();
+  if(!url){
+    toast('⚠️ Set the Apps Script URL in Settings first');
+    showPage('settings', document.querySelectorAll('.nav-tab')[4]);
+    return;
+  }
+  const btn = document.getElementById('driveSyncBtn');
+  const navLabel = document.getElementById('navDriveLabel');
+  if(btn) btn.disabled=true;
+  if(navLabel) navLabel.textContent='Syncing…';
+
+  try {
+    const payload = {
+      version: 2,
+      exported: new Date().toISOString(),
+      invoices: invoices,
+      vendors: getVendorRegistry(),
+      categories: getCategories()
+    };
+    const r = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'saveBackup', data: payload})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const lastEl = document.getElementById('driveLastSync');
+    if(lastEl) lastEl.textContent = 'Last synced: '+now+' · '+invoices.length+' invoices';
+    if(navLabel) navLabel.textContent='✓ Synced';
+    toast('☁️ Backup synced to Drive');
+  } catch(e){
+    if(navLabel) navLabel.textContent='Sync';
+    toast('❌ Sync failed: '+e.message);
+  }
+  if(btn) btn.disabled=false;
+}
+
+async function driveLoadBackup(){
+  const url = getAppsScriptUrl();
+  if(!url) return;
+  try {
+    const r = await fetch(url+'?action=loadBackup');
+    if(!r.ok) return;
+    const data = await r.json();
+    if(!data.invoices || !Array.isArray(data.invoices)) return;
+    const driveCount = data.invoices.length;
+    invoices = data.invoices;
+    nextId = Math.max(...invoices.map(i=>i.id),0)+1;
+    localStorage.setItem('eligens_inv', JSON.stringify(invoices));
+    if(data.vendors) saveVendorRegistry(data.vendors);
+    if(data.categories) saveCategories(data.categories);
+    buildVendorRegistryFromSeed();
+    refreshAllCategorySelects();
+    renderCatChips();
+    populateMonthFilter();
+    updateEmailSelect();
+    showDriveLoading(false);
+    renderAll();
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const lastEl = document.getElementById('driveLastSync');
+    if(lastEl) lastEl.textContent = 'Loaded from Drive at '+now+' · '+driveCount+' invoices';
+    toast('☁️ Data loaded from Drive ('+driveCount+' invoices)');
+  } catch(e){
+    showDriveLoading(false);
+    console.warn('Drive load failed:', e);
+  }
+}
+
+async function uploadFileToDrive(file, invoiceNum, vendor){
+  const url = getAppsScriptUrl();
+  if(!url) throw new Error('No Apps Script URL configured');
+
+  const status = document.getElementById('uploadStatus');
+  const progress = document.getElementById('uploadProgress');
+  if(status){ status.style.display='block'; status.style.color='var(--accent2)'; status.textContent='⬆️ Uploading to Drive…'; }
+  if(progress) progress.style.width='40%';
+
+  // Convert file to base64
+  const base64 = await new Promise((res,rej)=>{
+    const reader = new FileReader();
+    reader.onload = e => res(e.target.result.split(',')[1]);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
+
+  if(progress) progress.style.width='70%';
+
+  const ext = file.name.split('.').pop();
+  const cleanVendor = vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const cleanNum = invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const fileName = cleanNum+'_'+cleanVendor+'.'+ext;
+
+  const r = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      action: 'uploadFile',
+      fileName: fileName,
+      mimeType: file.type || 'application/octet-stream',
+      base64: base64,
+      folderId: DRIVE_FOLDER_ID
+    })
+  });
+
+  if(!r.ok) throw new Error('Upload failed: HTTP '+r.status);
+  const result = await r.json();
+  if(progress) progress.style.width='100%';
+
+  const viewLink = result.viewLink || ('https://drive.google.com/file/d/'+result.fileId+'/view');
+  document.getElementById('f-link').value = viewLink;
+  if(status){ status.style.color='var(--accent)'; status.textContent='✅ Uploaded: '+fileName; }
+  return viewLink;
+}
+
+// Called from initDriveUI (no-op now — no auth needed)
+function initDriveUI(){
+  const url = localStorage.getItem('apps_script_url');
+  if(url){
+    const inp = document.getElementById('appsScriptUrl');
+    if(inp) inp.value = url;
+    const navBtn = document.getElementById('navDriveBtn');
+    if(navBtn) navBtn.style.display='flex';
+  }
+}
+
+// Stubs for removed OAuth functions (keep save() working)
+function driveSignOut(){}
+function resetDriveSetup(){}
+function saveDriveClientId(){}
+function setDriveStatus(){}
+let driveAccessToken = null; // kept so save() doesn't break
 
 // ══════════════════════════════════════════
 // FILE ATTACHMENT & DRIVE UPLOAD
@@ -1680,8 +2188,8 @@ function acHighlight(items){
 // GOOGLE DRIVE SYNC
 // ══════════════════════════════════════════
 const DRIVE_FILE_NAME = 'eligens-backup.json';
-const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
-const INVOICES_FOLDER_NAME = 'Eligens Invoices';
+const DRIVE_FOLDER_ID = '1O6-BSraooksHEK7AmOmYWtke7yQx1aYE'; // public folder
+const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1O6-BSraooksHEK7AmOmYWtke7yQx1aYE';
 
 let driveAccessToken = null;
 let driveFileId = null; // cached file ID once found/created
@@ -1752,203 +2260,12 @@ function setDriveStatus(state, extra){
   if(syncBtn) syncBtn.disabled = (state==='syncing'||state==='signing');
 }
 
-function driveSilentSignIn(clientId){
-  // Google Identity Services — try to get token without prompt
-  if(!window.google?.accounts?.oauth2) return;
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: DRIVE_SCOPES,
-    prompt: '',
-    callback: (resp) => {
-      if(resp.access_token){
-        driveAccessToken = resp.access_token;
-        setDriveStatus('ready');
-        driveFileId = localStorage.getItem('drive_file_id') || null;
-        // Load data from Drive now that we have a token
-        driveLoadOnStartup();
-      }
-    }
-  });
-  client.requestAccessToken({prompt: ''});
-}
-
-async function driveSignIn(){
-  return new Promise((resolve, reject) => {
-    const clientId = localStorage.getItem('drive_client_id');
-    if(!clientId){ reject('No client ID'); return; }
-    if(!window.google?.accounts?.oauth2){ reject('Google API not loaded'); return; }
-    setDriveStatus('signing');
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: DRIVE_SCOPES,
-      callback: (resp) => {
-        if(resp.error){ reject(resp.error); return; }
-        driveAccessToken = resp.access_token;
-        setDriveStatus('ready');
-        resolve(resp.access_token);
-      }
-    });
-    client.requestAccessToken({prompt: 'consent'});
-  });
-}
-
-function driveSignOut(){
-  if(driveAccessToken && window.google?.accounts?.oauth2){
-    google.accounts.oauth2.revoke(driveAccessToken, ()=>{});
-  }
-  driveAccessToken = null;
-  driveFileId = null;
-  localStorage.removeItem('drive_file_id');
-  setDriveStatus('idle');
-  toast('Signed out of Google Drive');
-}
-
-async function driveSync(){
-  try {
-    setDriveStatus('syncing');
-    // Ensure we have a token
-    if(!driveAccessToken){
-      await driveSignIn();
-    }
-    // Build payload
-    const payload = JSON.stringify({
-      version: 2,
-      exported: new Date().toISOString(),
-      invoices: invoices,
-      vendors: getVendorRegistry(),
-      categories: getCategories()
-    }, null, 2);
-
-    const blob = new Blob([payload], {type:'application/json'});
-
-    // Check if we already have a file ID cached
-    if(!driveFileId){
-      driveFileId = localStorage.getItem('drive_file_id');
-    }
-
-    // If we have a file ID, try to update it; otherwise search first
-    if(!driveFileId){
-      driveFileId = await driveFindFile();
-    }
-
-    if(driveFileId){
-      await driveUpdateFile(driveFileId, blob);
-    } else {
-      driveFileId = await driveCreateFile(blob);
-      localStorage.setItem('drive_file_id', driveFileId);
-    }
-
-    const now = new Date().toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
-    setDriveStatus('done', 'at '+now);
-    document.getElementById('driveLastSync').textContent = 'Last synced: ' + new Date().toLocaleString('en-GB');
-    toast('☁️ Synced to Google Drive successfully');
-
-  } catch(err){
-    console.error('Drive sync error:', err);
-    // Token expired — clear and retry once
-    if(String(err).includes('401') || String(err).includes('invalid_token')){
-      driveAccessToken = null;
-      setDriveStatus('idle');
-      toast('⚠️ Session expired — click Sync again to re-authenticate');
-    } else {
-      setDriveStatus('error', String(err).substring(0,40));
-      toast('❌ Drive sync failed: ' + String(err).substring(0,60));
-    }
-  }
-}
-
-async function driveFindFile(){
-  const name = encodeURIComponent(DRIVE_FILE_NAME);
-  const r = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FILE_NAME}'+and+trashed=false&fields=files(id,name)`,
-    {headers: {Authorization: 'Bearer '+driveAccessToken}}
-  );
-  if(!r.ok) throw new Error(r.status);
-  const data = await r.json();
-  return data.files?.[0]?.id || null;
-}
-
-async function driveCreateFile(blob){
-  // Multipart upload: metadata + content
-  const meta = JSON.stringify({name: DRIVE_FILE_NAME, mimeType: 'application/json'});
-  const body = new FormData();
-  body.append('metadata', new Blob([meta], {type:'application/json'}));
-  body.append('file', blob);
-  const r = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
-    {method:'POST', headers:{Authorization:'Bearer '+driveAccessToken}, body}
-  );
-  if(!r.ok) throw new Error(r.status);
-  const data = await r.json();
-  return data.id;
-}
-
-async function driveUpdateFile(fileId, blob){
-  const r = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
-    {method:'PATCH', headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'}, body:blob}
-  );
-  if(r.status===404){
-    // File was deleted — create new one
-    localStorage.removeItem('drive_file_id');
-    driveFileId = null;
-    const newId = await driveCreateFile(blob);
-    localStorage.setItem('drive_file_id', newId);
-    driveFileId = newId;
-    return;
-  }
-  if(!r.ok) throw new Error(r.status);
-}
-
-
 async function driveLoadOnStartup(){
-  // Only run if we have a token and a known file ID
-  if(!driveAccessToken) return;
-  const fileId = driveFileId || localStorage.getItem('drive_file_id');
-  if(!fileId) return;
-  try {
-    setDriveStatus('syncing');
-    const r = await fetch(
-      `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-      {headers:{Authorization:'Bearer '+driveAccessToken}}
-    );
-    if(r.status===404){
-      // File doesn't exist yet — clear cached ID
-      localStorage.removeItem('drive_file_id');
-      driveFileId = null;
-      setDriveStatus('ready');
-      return;
-    }
-    if(!r.ok) throw new Error(r.status);
-    const data = await r.json();
-    if(!data.invoices || !Array.isArray(data.invoices)) throw new Error('Invalid backup');
-
-    // Drive is ALWAYS the source of truth — always apply it
-    const driveCount = data.invoices.length;
-    invoices = data.invoices;
-    nextId = Math.max(...invoices.map(i=>i.id), 0)+1;
-    // Save to localStorage so next refresh is instant
-    localStorage.setItem('eligens_inv', JSON.stringify(invoices));
-    if(data.vendors) saveVendorRegistry(data.vendors);
-    if(data.categories) saveCategories(data.categories);
-    buildVendorRegistryFromSeed();
-    refreshAllCategorySelects();
-    renderCatChips();
-    populateMonthFilter();
-    updateEmailSelect();
-    showDriveLoading(false);
-    renderAll();
-    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('driveLastSync').textContent = 'Synced from Drive at '+now+' · '+driveCount+' invoices';
-    setDriveStatus('done', new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}));
-  } catch(err){
-    console.warn('Drive load on startup failed:', err);
-    setDriveStatus(driveAccessToken ? 'ready' : 'idle');
-  }
+  // Load from Drive via Apps Script
+  await driveLoadBackup();
 }
 
-// Also auto-sync to Drive whenever data is saved (if signed in)
-const _origSave = typeof save === 'function' ? save : null;
+
 function saveAndSync(){
   localStorage.setItem('eligens_inv', JSON.stringify(invoices));
   // Auto-sync only if already authenticated (no popup)
