@@ -967,7 +967,7 @@ const SEED=[
   {id:81,priority:'',status:'unpaid',num:'30433',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-13',due:'2026-02-14',paidDate:'',amount:41.98,vat:'',notes:'',link:''},
   {id:82,priority:'',status:'unpaid',num:'30559',vendor:'MyDello OÜ',category:'Logistics',date:'2026-02-17',due:'2026-02-18',paidDate:'',amount:79.67,vat:'',notes:'',link:''},
   {id:83,priority:'',status:'unpaid',num:'7112394',vendor:'Lindstrom SIA',category:'Cleaning',date:'2026-02-23',due:'2026-03-09',paidDate:'',amount:11.28,vat:'',notes:'',link:''},
-  {id:84,priority:'',status:'unpaid',num:'44262729-0',vendor:'TET SIA',category:'Utilities',date:'2026-02-24',due:'2026-03-08',paidDate:'',amount:106.59,vat:'',notes:'',link:''},
+  {id:84,priority:'',status:'unpaid',num:'44262729-0',vendor:'TET SIA',category:'Utilities',date:'2026-02-24',due:'2026-03-08',paidDate:'',amount:106.59,vat:'',notes:'',link:'https://netorgft13497992-my.sharepoint.com/:b:/g/personal/e_campere_eligens_io/IQDOYGURvW0xSLpMzXxPKVvyAZUsloS0465TTtTDBimsZF4?e=bLKxR7'},
   {id:85,priority:'',status:'unpaid',num:'MUP2004156',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-02-28',due:'2026-03-14',paidDate:'',amount:4.53,vat:'',notes:'',link:''},
   {id:86,priority:'',status:'unpaid',num:'PPD2116470',vendor:'LATVIJAS PASTS VAS',category:'Postal',date:'2026-02-28',due:'2026-03-21',paidDate:'',amount:171.77,vat:'',notes:'',link:''},
   {id:87,priority:'',status:'unpaid',num:'BR2316433',vendor:'VENDEN, SIA',category:'Office Supplies',date:'2026-03-01',due:'2026-03-15',paidDate:'',amount:24.20,vat:'',notes:'',link:''},
@@ -1082,7 +1082,7 @@ function renderTable(data){
       <td class="amt">€${inv.amount.toFixed(2)}</td>
       <td style="color:var(--accent)">${inv.paidDate?fd(inv.paidDate):'<span style="color:var(--text3)">—</span>'}</td>
       <td style="max-width:150px;font-size:11px;color:${inv.notes?'var(--accent2)':'var(--text3)'}">${inv.notes||'—'}</td>
-      <td>${inv.link?`<a href="${inv.link.startsWith('http')?inv.link:'#'}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">📄 View</a>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td>${validLink(inv.link)?`<a href="${inv.link}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">📄 View</a>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
       <td><button class="act-btn" onclick="openEdit(${inv.id})" title="Edit">✏️</button><button class="act-btn del" onclick="deleteInv(${inv.id})" title="Delete">✕</button></td>
     </tr>`;
   }).join('');
@@ -1309,6 +1309,35 @@ function bar(id,items){
 }
 
 // HELPERS
+function validLink(link){
+  if(!link || link.trim()==='') return false;
+  // Reject Drive URLs with undefined/null as the file ID
+  if(link.includes('drive.google.com/file/d/undefined')) return false;
+  if(link.includes('drive.google.com/file/d/null')) return false;
+  if(link.includes('drive.google.com/file/d/NaN')) return false;
+  // Must start with http to be a usable link
+  return link.startsWith('http') || link.startsWith('/');
+}
+
+function sanitiseLinks(){
+  // Fix any corrupted Drive links already stored in invoices
+  let fixed = 0;
+  invoices.forEach(inv => {
+    if(inv.link && (
+      inv.link.includes('/file/d/undefined') ||
+      inv.link.includes('/file/d/null') ||
+      inv.link.includes('/file/d/NaN')
+    )){
+      inv.link = '';
+      fixed++;
+    }
+  });
+  if(fixed > 0){
+    save();
+    console.log('Sanitised ' + fixed + ' corrupted invoice link(s)');
+  }
+}
+
 function fd(d){if(!d)return'—';try{const[y,m,day]=d.split('-');return`${day}.${m}.${y}`;}catch(e){return d;}}
 function fm(m){try{const[y,mo]=m.split('-');return['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(mo)]+' '+y.slice(2);}catch(e){return m;}}
 
@@ -1498,10 +1527,10 @@ async function uploadFileToDrive(file, invoiceNum, vendor){
   try {
     const text = await r.text();
     const result = JSON.parse(text);
-    if(result.viewLink) viewLink = result.viewLink;
-    else if(result.fileId && result.fileId !== 'undefined') {
-      viewLink = 'https://drive.google.com/file/d/'+result.fileId+'/view';
-    }
+    // Guard: only use fileId if it's a real value (not 'undefined', 'null', empty)
+    const safeId = result.fileId && result.fileId !== 'undefined' && result.fileId !== 'null' && result.fileId.length > 5;
+    if(result.viewLink && !result.viewLink.includes('/undefined')) viewLink = result.viewLink;
+    else if(safeId) viewLink = 'https://drive.google.com/file/d/'+result.fileId+'/view';
   } catch(e){ /* response couldn't be parsed — file still uploaded */ }
 
   // If we didn't get a fileId back, search Drive for the file by name
