@@ -585,31 +585,14 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
       <!-- Google Drive Sync -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
         <div style="font-size:15px;font-weight:700;margin-bottom:4px">☁️ Google Drive Sync</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">Invoice files upload to your shared Drive folder automatically. The backup JSON syncs via a Google Apps Script — no login needed.</div>
-
-        <!-- Apps Script URL setup -->
-        <div style="background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-bottom:14px;line-height:1.8">
-          <strong>One-time setup (5 min):</strong><br>
-          1. Go to <a href="https://script.google.com" target="_blank" style="color:var(--blue);font-weight:600">script.google.com</a> → New project<br>
-          2. Paste the Apps Script code (copy from below) → Save<br>
-          3. Deploy → New deployment → Web app → Execute as <strong>Me</strong> → Anyone → Deploy<br>
-          4. Copy the web app URL and paste it below
+        <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
+          All invoices auto-sync to Drive. Files you attach upload directly to the shared folder. No setup needed.
         </div>
-
-        <div class="fg">
-          <label>Apps Script Web App URL</label>
-          <input class="fc" id="appsScriptUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" style="font-family:var(--mono);font-size:11px">
+        <div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+          <span>✅</span> Connected — syncing automatically on every save
         </div>
-
-        <div style="display:flex;gap:10px;margin-bottom:12px">
-          <button class="btn btn-primary" onclick="saveAppsScriptUrl()" style="flex:1;justify-content:center">Save URL</button>
-          <button class="btn btn-ghost" onclick="testAppsScript()" style="flex:1;justify-content:center">Test Connection</button>
-        </div>
-
-        <div id="appsScriptStatus" style="font-size:11px;margin-bottom:12px;display:none"></div>
-
         <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="driveSyncBackup()" id="driveSyncBtn" style="flex:2;justify-content:center">☁️ Sync Backup to Drive</button>
+          <button class="btn btn-primary" onclick="driveSyncBackup()" id="driveSyncBtn" style="flex:2;justify-content:center">☁️ Sync Now</button>
           <a href="https://drive.google.com/drive/folders/1O6-BSraooksHEK7AmOmYWtke7yQx1aYE" target="_blank" class="btn btn-ghost" style="flex:1;justify-content:center;text-decoration:none">📁 Open Folder</a>
         </div>
         <div style="font-size:10px;color:var(--text3);margin-top:8px" id="driveLastSync"></div>
@@ -1020,7 +1003,7 @@ function initApp(){
   updateEmailSelect();
   renderAll();
   // Always try to sync from Drive on startup (silent, background)
-  setTimeout(driveLoadOnStartup, 1200);
+  // Drive load handled by initDriveUI → driveLoadBackup
 }
 
 function showDriveLoading(show){
@@ -1384,96 +1367,135 @@ function setUploadFile(file){
   } else {
     status.style.display='block';
     status.style.color='var(--accent2)';
-    status.textContent='⚠️ Sign into Drive to upload files automatically';
+    status.textContent='⚠️ Configure Apps Script to enable file upload';
   }
 }
 
-async function getOrCreateInvoicesFolder(){
-  if(invoicesFolderId) return invoicesFolderId;
-  const cached = localStorage.getItem('drive_invoices_folder_id');
-  if(cached){ invoicesFolderId=cached; return invoicesFolderId; }
+// ══════════════════════════════════════════
+// GOOGLE DRIVE SYNC (via Apps Script — no login needed)
+// ══════════════════════════════════════════
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqT-dC5_xS45l6EiNh2lxJ2orCF4K5BzJgUVW4UK7QrjYnI2tsOhROA5k6adSzySonXg/exec';
+const DRIVE_FOLDER_ID = '1O6-BSraooksHEK7AmOmYWtke7yQx1aYE';
 
-  // Search for existing folder
-  const searchRes = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=name='${INVOICES_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)`,
-    {headers:{Authorization:'Bearer '+driveAccessToken}}
-  );
-  if(!searchRes.ok) throw new Error('Folder search failed: '+searchRes.status);
-  const searchData = await searchRes.json();
+function getAppsScriptUrl(){ return APPS_SCRIPT_URL; }
 
-  if(searchData.files && searchData.files.length > 0){
-    invoicesFolderId = searchData.files[0].id;
-  } else {
-    // Create the folder
-    const createRes = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+function initDriveUI(){
+  const navBtn = document.getElementById('navDriveBtn');
+  if(navBtn) navBtn.style.display='flex';
+  // Auto-load from Drive on startup
+  setTimeout(driveLoadBackup, 1500);
+}
+
+function showAppsScriptStatus(msg, color){
+  const el = document.getElementById('appsScriptStatus');
+  if(!el) return;
+  el.style.display='block'; el.style.color=color||'var(--text2)'; el.textContent=msg;
+}
+
+async function testAppsScript(){
+  try {
+    const r = await fetch(APPS_SCRIPT_URL+'?action=ping');
+    if(r.ok) toast('✅ Drive connected!');
+    else toast('⚠️ Unexpected response');
+  } catch(e){ toast('❌ Connection failed: '+e.message); }
+}
+
+async function driveSyncBackup(){
+  const btn = document.getElementById('driveSyncBtn');
+  const navLabel = document.getElementById('navDriveLabel');
+  if(btn) btn.disabled=true;
+  if(navLabel) navLabel.textContent='Syncing…';
+  try {
+    const payload = {
+      version:2, exported:new Date().toISOString(),
+      invoices:invoices, vendors:getVendorRegistry(), categories:getCategories()
+    };
+    const r = await fetch(APPS_SCRIPT_URL, {
       method:'POST',
-      headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
-      body: JSON.stringify({name: INVOICES_FOLDER_NAME, mimeType:'application/vnd.google-apps.folder'})
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'saveBackup', data:payload})
     });
-    if(!createRes.ok) throw new Error('Folder create failed: '+createRes.status);
-    const created = await createRes.json();
-    invoicesFolderId = created.id;
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const lastEl = document.getElementById('driveLastSync');
+    if(lastEl) lastEl.textContent='Last synced: '+now+' · '+invoices.length+' invoices';
+    if(navLabel) navLabel.textContent='✓ Synced';
+    toast('☁️ Synced to Drive');
+  } catch(e){
+    if(navLabel) navLabel.textContent='Sync';
+    toast('❌ Sync failed: '+e.message);
   }
-  localStorage.setItem('drive_invoices_folder_id', invoicesFolderId);
-  return invoicesFolderId;
+  if(btn) btn.disabled=false;
 }
 
-async function uploadInvoiceFile(file, invoiceNum, vendor){
-  const status = document.getElementById('uploadStatus');
-  const progress = document.getElementById('uploadProgress');
-
-  status.style.display='block';
-  status.style.color='var(--accent2)';
-  status.textContent='⬆️ Uploading to Google Drive…';
-  if(progress) progress.style.width='30%';
-
-  // Get or create the invoices folder
-  const folderId = await getOrCreateInvoicesFolder();
-  if(progress) progress.style.width='50%';
-
-  // Clean filename: InvoiceNum_Vendor.ext
-  const ext = file.name.split('.').pop();
-  const cleanVendor = vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const cleanNum = invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const fileName = `${cleanNum}_${cleanVendor}.${ext}`;
-
-  // Upload file to Drive folder
-  const meta = JSON.stringify({name: fileName, parents:[folderId]});
-  const form = new FormData();
-  form.append('metadata', new Blob([meta], {type:'application/json'}));
-  form.append('file', file);
-
-  const uploadRes = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
-    {method:'POST', headers:{Authorization:'Bearer '+driveAccessToken}, body:form}
-  );
-
-  if(!uploadRes.ok){
-    const err = await uploadRes.text();
-    throw new Error('Upload failed: '+uploadRes.status);
+async function driveLoadBackup(){
+  try {
+    const r = await fetch(APPS_SCRIPT_URL+'?action=loadBackup');
+    if(!r.ok) return;
+    const data = await r.json();
+    if(!data.invoices||!Array.isArray(data.invoices)) return;
+    invoices=data.invoices;
+    nextId=Math.max(...invoices.map(i=>i.id),0)+1;
+    localStorage.setItem('eligens_inv',JSON.stringify(invoices));
+    if(data.vendors) saveVendorRegistry(data.vendors);
+    if(data.categories) saveCategories(data.categories);
+    buildVendorRegistryFromSeed();
+    refreshAllCategorySelects();
+    renderCatChips();
+    populateMonthFilter();
+    updateEmailSelect();
+    showDriveLoading(false);
+    renderAll();
+    const now=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    const lastEl=document.getElementById('driveLastSync');
+    if(lastEl) lastEl.textContent='Loaded from Drive at '+now+' · '+data.invoices.length+' invoices';
+    toast('☁️ Data loaded from Drive ('+data.invoices.length+' invoices)');
+  } catch(e){
+    showDriveLoading(false);
+    console.warn('Drive load failed:',e);
   }
+}
 
-  if(progress) progress.style.width='90%';
-  const uploaded = await uploadRes.json();
+async function uploadFileToDrive(file, invoiceNum, vendor){
+  const status=document.getElementById('uploadStatus');
+  const progress=document.getElementById('uploadProgress');
+  if(status){ status.style.display='block'; status.style.color='var(--accent2)'; status.textContent='⬆️ Uploading to Drive…'; }
+  if(progress) progress.style.width='40%';
 
-  // Make file viewable by anyone with link (so the link works)
-  await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`, {
-    method:'POST',
-    headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
-    body: JSON.stringify({role:'reader', type:'anyone'})
+  const base64 = await new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onload=e=>res(e.target.result.split(',')[1]);
+    reader.onerror=rej;
+    reader.readAsDataURL(file);
   });
+  if(progress) progress.style.width='70%';
 
+  const ext=file.name.split('.').pop();
+  const cleanVendor=vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const cleanNum=invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const fileName=cleanNum+'_'+cleanVendor+'.'+ext;
+
+  const r=await fetch(APPS_SCRIPT_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'uploadFile',fileName,mimeType:file.type||'application/pdf',base64,folderId:DRIVE_FOLDER_ID})
+  });
+  if(!r.ok) throw new Error('Upload failed: HTTP '+r.status);
+  const result=await r.json();
   if(progress) progress.style.width='100%';
-  const viewLink = `https://drive.google.com/file/d/${uploaded.id}/view`;
-
-  status.style.color='var(--accent)';
-  status.textContent='✅ Uploaded: '+fileName;
-
-  // Auto-fill the link field
-  document.getElementById('f-link').value = viewLink;
-
+  const viewLink=result.viewLink||('https://drive.google.com/file/d/'+result.fileId+'/view');
+  document.getElementById('f-link').value=viewLink;
+  if(status){ status.style.color='var(--accent)'; status.textContent='✅ Uploaded: '+fileName; }
   return viewLink;
 }
+
+// Stubs for removed OAuth functions
+function driveSignOut(){}
+function resetDriveSetup(){}
+function saveDriveClientId(){}
+function setDriveStatus(){}
+function saveAppsScriptUrl(){}
+let driveAccessToken=null;
 
 // ══════════════════════════════════════════
 // CATEGORIES — dynamic, persisted
