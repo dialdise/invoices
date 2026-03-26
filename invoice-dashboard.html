@@ -641,6 +641,9 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 ═══════════════════════════════════════ -->
 <script>
 'use strict';
+// ── Runtime state (var = hoisted, safe for boot sequence)
+var invoices, nextId, pendingFile = null, invoicesFolderId = null, driveAccessToken = null, acFocusIdx = -1;
+
 
 // ══════════════════════════════════════════
 // CRYPTO — PBKDF2 SHA-256, 600k iterations
@@ -976,7 +979,7 @@ const SEED=[
   {id:93,priority:'',status:'unpaid',num:'202628',vendor:'SIA ProClear K',category:'Cleaning',date:'2026-03-10',due:'2026-03-20',paidDate:'',amount:108.90,vat:'',notes:'',link:''},
 ];
 
-let invoices,nextId;
+// (declared at top)
 
 function initApp(){
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
@@ -1328,8 +1331,8 @@ function exportCSV(){
 // ══════════════════════════════════════════
 // FILE ATTACHMENT & DRIVE UPLOAD
 // ══════════════════════════════════════════
-let pendingFile = null;
-let invoicesFolderId = null; // cached Google Drive folder ID
+// (declared at top)
+// (declared at top)
 
 // Drag & drop on upload zone
 document.addEventListener('DOMContentLoaded', () => {
@@ -1501,7 +1504,7 @@ function resetDriveSetup(){}
 function saveDriveClientId(){}
 function setDriveStatus(){}
 function saveAppsScriptUrl(){}
-let driveAccessToken=null;
+// (declared at top)
 
 // ══════════════════════════════════════════
 // CATEGORIES — dynamic, persisted
@@ -1621,7 +1624,7 @@ function getKnownVendors(){
 // ══════════════════════════════════════════
 // AUTOCOMPLETE
 // ══════════════════════════════════════════
-let acFocusIdx = -1;
+// (declared at top)
 
 function acInput(val){
   const dropdown = document.getElementById('acDropdown');
