@@ -311,6 +311,24 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
   margin-bottom:14px;display:flex;align-items:center;gap:6px;
 }
 
+
+/* ── UPLOAD ZONE ── */
+.upload-zone{
+  border:2px dashed var(--border);border-radius:8px;padding:20px;
+  text-align:center;cursor:pointer;transition:all .2s;
+  background:var(--surface2);position:relative;
+}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:var(--accent-light);}
+.upload-zone.has-file{border-color:var(--accent);border-style:solid;background:var(--accent-light);}
+.upload-zone-icon{font-size:24px;margin-bottom:6px}
+.upload-zone-text{font-size:12px;color:var(--text2)}
+.upload-zone-text span{color:var(--accent);font-weight:600}
+.upload-zone-filename{font-size:11px;color:var(--accent);margin-top:4px;font-family:var(--mono);font-weight:600}
+.upload-progress{
+  position:absolute;bottom:0;left:0;height:3px;
+  background:var(--accent);border-radius:0 0 8px 8px;
+  width:0%;transition:width .3s;
+}
 @media(max-width:900px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .report-grid{grid-template-columns:1fr}
@@ -459,7 +477,21 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
           <div class="fg"><label>VAT / Tax Code</label><input class="fc" id="f-vat" placeholder="e.g. 21% VAT" type="text"></div>
         </div>
         <div class="fg"><label>Notes</label><input class="fc" id="f-notes" placeholder="Any special notes" type="text"></div>
-        <div class="fg"><label>Document Link</label><input class="fc" id="f-link" placeholder="https://… SharePoint / Drive URL" type="text"></div>
+        <div class="fg">
+          <label>Invoice Document</label>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('f-file').click()">
+            <div class="upload-zone-icon">📎</div>
+            <div class="upload-zone-text">Drop PDF/image or <span>browse</span></div>
+            <div class="upload-zone-filename" id="uploadFileName"></div>
+            <div class="upload-progress" id="uploadProgress"></div>
+          </div>
+          <input type="file" id="f-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="handleFileSelect(this)">
+          <div style="margin-top:8px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:11px;color:var(--text3)">or paste link:</span>
+            <input class="fc" id="f-link" placeholder="https://… SharePoint / Drive URL" type="text" style="flex:1;font-size:12px">
+          </div>
+          <div id="uploadStatus" style="font-size:11px;margin-top:5px;display:none"></div>
+        </div>
         <div style="display:flex;gap:10px;margin-top:6px">
           <button class="btn btn-ghost" onclick="resetForm()" style="flex:1;justify-content:center">✕ Clear</button>
           <button class="btn btn-primary" onclick="saveInvoice()" style="flex:2;justify-content:center" id="saveBtn">✓ Save Invoice</button>
@@ -1096,13 +1128,33 @@ function getStatus(inv){
 }
 
 // ADD / EDIT
-function saveInvoice(){
+async function saveInvoice(){
   const num=document.getElementById('f-num').value.trim();
   const vendor=document.getElementById('f-vendor').value.trim();
   const date=document.getElementById('f-date').value;
   const due=document.getElementById('f-due').value;
   const amount=parseFloat(document.getElementById('f-amount').value);
   if(!num||!vendor||!date||!due||isNaN(amount)){toast('⚠️ Fill all required fields');return;}
+
+  // Disable save button during upload
+  const saveBtn=document.getElementById('saveBtn');
+  saveBtn.disabled=true;
+  saveBtn.textContent='Saving…';
+
+  let link=document.getElementById('f-link').value.trim();
+
+  // If a file is selected and Drive is authenticated, upload it first
+  if(pendingFile && driveAccessToken){
+    try {
+      const uploadedLink = await uploadInvoiceFile(pendingFile, num, vendor);
+      if(uploadedLink) link = uploadedLink;
+    } catch(e){
+      toast('⚠️ File upload failed, saving without attachment');
+    }
+  } else if(pendingFile && !driveAccessToken){
+    toast('⚠️ Sign into Drive first to upload files. Link saved as-is.');
+  }
+
   const eid=document.getElementById('editId').value;
   const inv={
     id:eid?parseInt(eid):nextId++,
@@ -1115,13 +1167,15 @@ function saveInvoice(){
     amount,
     vat:document.getElementById('f-vat').value,
     notes:document.getElementById('f-notes').value,
-    link:document.getElementById('f-link').value
+    link
   };
   if(eid){const idx=invoices.findIndex(i=>i.id===parseInt(eid));invoices[idx]=inv;toast('✅ Invoice updated');}
   else{invoices.unshift(inv);toast('✅ Invoice saved');}
   updateVendorRegistry(inv.vendor, inv.category);
   save();resetForm();renderAll();
   showPage('invoices',document.querySelectorAll('.nav-tab')[0]);
+  saveBtn.disabled=false;
+  saveBtn.textContent='✓ Save Invoice';
 }
 
 function resetForm(){
@@ -1133,6 +1187,18 @@ function resetForm(){
   document.getElementById('formTitle').textContent='➕ Add New Invoice';
   document.getElementById('saveBtn').textContent='✓ Save Invoice';
   document.getElementById('editId').value='';
+  // Clear file upload
+  pendingFile=null;
+  const zone=document.getElementById('uploadZone');
+  if(zone) zone.classList.remove('has-file','dragover');
+  const fn=document.getElementById('uploadFileName');
+  if(fn) fn.textContent='';
+  const fi=document.getElementById('f-file');
+  if(fi) fi.value='';
+  const us=document.getElementById('uploadStatus');
+  if(us){ us.style.display='none'; us.textContent=''; }
+  const up=document.getElementById('uploadProgress');
+  if(up) up.style.width='0%';
 }
 
 function openEdit(id){
@@ -1277,6 +1343,140 @@ function exportCSV(){
   toast('📊 CSV exported');
 }
 
+
+
+// ══════════════════════════════════════════
+// FILE ATTACHMENT & DRIVE UPLOAD
+// ══════════════════════════════════════════
+let pendingFile = null;
+let invoicesFolderId = null; // cached Google Drive folder ID
+
+// Drag & drop on upload zone
+document.addEventListener('DOMContentLoaded', () => {
+  const zone = document.getElementById('uploadZone');
+  if(!zone) return;
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if(f) setUploadFile(f);
+  });
+});
+
+function handleFileSelect(input){
+  if(input.files[0]) setUploadFile(input.files[0]);
+}
+
+function setUploadFile(file){
+  const allowed = ['application/pdf','image/png','image/jpeg','image/jpg'];
+  if(!allowed.includes(file.type) && !file.name.match(/\.(pdf|png|jpg|jpeg)$/i)){
+    toast('⚠️ Only PDF, PNG, JPG files supported');
+    return;
+  }
+  pendingFile = file;
+  const zone = document.getElementById('uploadZone');
+  zone.classList.add('has-file');
+  document.getElementById('uploadFileName').textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
+  const status = document.getElementById('uploadStatus');
+  if(driveAccessToken){
+    status.style.display='block';
+    status.style.color='var(--accent)';
+    status.textContent='✅ Will upload to Google Drive on save';
+  } else {
+    status.style.display='block';
+    status.style.color='var(--accent2)';
+    status.textContent='⚠️ Sign into Drive to upload files automatically';
+  }
+}
+
+async function getOrCreateInvoicesFolder(){
+  if(invoicesFolderId) return invoicesFolderId;
+  const cached = localStorage.getItem('drive_invoices_folder_id');
+  if(cached){ invoicesFolderId=cached; return invoicesFolderId; }
+
+  // Search for existing folder
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${INVOICES_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)`,
+    {headers:{Authorization:'Bearer '+driveAccessToken}}
+  );
+  if(!searchRes.ok) throw new Error('Folder search failed: '+searchRes.status);
+  const searchData = await searchRes.json();
+
+  if(searchData.files && searchData.files.length > 0){
+    invoicesFolderId = searchData.files[0].id;
+  } else {
+    // Create the folder
+    const createRes = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
+      body: JSON.stringify({name: INVOICES_FOLDER_NAME, mimeType:'application/vnd.google-apps.folder'})
+    });
+    if(!createRes.ok) throw new Error('Folder create failed: '+createRes.status);
+    const created = await createRes.json();
+    invoicesFolderId = created.id;
+  }
+  localStorage.setItem('drive_invoices_folder_id', invoicesFolderId);
+  return invoicesFolderId;
+}
+
+async function uploadInvoiceFile(file, invoiceNum, vendor){
+  const status = document.getElementById('uploadStatus');
+  const progress = document.getElementById('uploadProgress');
+
+  status.style.display='block';
+  status.style.color='var(--accent2)';
+  status.textContent='⬆️ Uploading to Google Drive…';
+  if(progress) progress.style.width='30%';
+
+  // Get or create the invoices folder
+  const folderId = await getOrCreateInvoicesFolder();
+  if(progress) progress.style.width='50%';
+
+  // Clean filename: InvoiceNum_Vendor.ext
+  const ext = file.name.split('.').pop();
+  const cleanVendor = vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const cleanNum = invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const fileName = `${cleanNum}_${cleanVendor}.${ext}`;
+
+  // Upload file to Drive folder
+  const meta = JSON.stringify({name: fileName, parents:[folderId]});
+  const form = new FormData();
+  form.append('metadata', new Blob([meta], {type:'application/json'}));
+  form.append('file', file);
+
+  const uploadRes = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink',
+    {method:'POST', headers:{Authorization:'Bearer '+driveAccessToken}, body:form}
+  );
+
+  if(!uploadRes.ok){
+    const err = await uploadRes.text();
+    throw new Error('Upload failed: '+uploadRes.status);
+  }
+
+  if(progress) progress.style.width='90%';
+  const uploaded = await uploadRes.json();
+
+  // Make file viewable by anyone with link (so the link works)
+  await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`, {
+    method:'POST',
+    headers:{Authorization:'Bearer '+driveAccessToken, 'Content-Type':'application/json'},
+    body: JSON.stringify({role:'reader', type:'anyone'})
+  });
+
+  if(progress) progress.style.width='100%';
+  const viewLink = `https://drive.google.com/file/d/${uploaded.id}/view`;
+
+  status.style.color='var(--accent)';
+  status.textContent='✅ Uploaded: '+fileName;
+
+  // Auto-fill the link field
+  document.getElementById('f-link').value = viewLink;
+
+  return viewLink;
+}
 
 // ══════════════════════════════════════════
 // CATEGORIES — dynamic, persisted
@@ -1481,6 +1681,7 @@ function acHighlight(items){
 // ══════════════════════════════════════════
 const DRIVE_FILE_NAME = 'eligens-backup.json';
 const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const INVOICES_FOLDER_NAME = 'Eligens Invoices';
 
 let driveAccessToken = null;
 let driveFileId = null; // cached file ID once found/created
