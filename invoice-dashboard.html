@@ -405,8 +405,8 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
     </div>
     <div class="nav-right">
       <span class="session-bar" id="sessionTimer">⏱ 8h 00m</span>
-      <button onclick="driveSyncBackup()" title="Sync to Drive" id="navDriveBtn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;align-items:center;gap:5px;display:none">
-        ☁️ <span id="navDriveLabel">Sync</span>
+      <button onclick="ghSave()" title="Save to GitHub" id="navGhBtn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.8);border-radius:6px;padding:5px 10px;font-family:var(--sans);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;align-items:center;gap:5px;display:none">
+        💾 <span id="navGhLabel">Save</span>
       </button>
       <span class="nav-user" id="navUser"></span>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -582,20 +582,51 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
         <div id="catAddError" style="font-size:11px;color:var(--red);margin-top:6px;display:none"></div>
       </div>
 
-      <!-- Google Drive Sync -->
+      <!-- GitHub Data Storage -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow)">
-        <div style="font-size:15px;font-weight:700;margin-bottom:4px">☁️ Google Drive Sync</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:4px">🔗 GitHub Data Storage</div>
         <div style="font-size:12px;color:var(--text2);margin-bottom:14px">
-          All invoices auto-sync to Drive. Files you attach upload directly to the shared folder. No setup needed.
+          Your invoice data is saved to <strong>data.json</strong> in your GitHub repo — persists across every refresh, forever.
         </div>
-        <div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--accent);margin-bottom:14px;display:flex;align-items:center;gap:8px">
-          <span>✅</span> Connected — syncing automatically on every save
+
+        <!-- Token setup (shown until configured) -->
+        <div id="ghSetup">
+          <div style="background:var(--blue-light);border:1px solid var(--blue);border-radius:8px;padding:12px;font-size:11px;color:var(--blue);margin-bottom:12px;line-height:1.8">
+            <strong>One-time setup (2 min):</strong><br>
+            1. Go to <a href="https://github.com/settings/tokens?type=beta" target="_blank" style="color:var(--blue);font-weight:600">github.com → Settings → Developer settings → Fine-grained tokens</a><br>
+            2. Generate new token → Repository access: <strong>dialdise/invoices only</strong><br>
+            3. Permissions → Contents: <strong>Read and Write</strong> → Generate<br>
+            4. Paste the token below (stored only in your browser)
+          </div>
+          <div class="fg">
+            <label>GitHub Personal Access Token</label>
+            <div class="pw-wrap">
+              <input class="fc" id="ghToken" type="password" placeholder="github_pat_…" style="font-family:var(--mono);font-size:11px">
+              <button class="pw-toggle" type="button" onclick="togglePw('ghToken',this)" tabindex="-1">👁</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="saveGhToken()" style="width:100%;justify-content:center">Save Token & Connect</button>
         </div>
-        <div style="display:flex;gap:10px">
-          <button class="btn btn-primary" onclick="driveSyncBackup()" id="driveSyncBtn" style="flex:2;justify-content:center">☁️ Sync Now</button>
-          <a href="https://drive.google.com/drive/folders/1O6-BSraooksHEK7AmOmYWtke7yQx1aYE" target="_blank" class="btn btn-ghost" style="flex:1;justify-content:center;text-decoration:none">📁 Open Folder</a>
+
+        <!-- Status (shown after token saved) -->
+        <div id="ghControls" style="display:none">
+          <div id="ghStatus" style="font-size:12px;color:var(--text2);margin-bottom:12px;display:flex;align-items:center;gap:8px">
+            <span id="ghStatusDot" style="width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0"></span>
+            <span id="ghStatusText">Connected to dialdise/invoices</span>
+          </div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="ghSave()" id="ghSaveBtn" style="flex:2;justify-content:center">💾 Save to GitHub</button>
+            <button class="btn btn-ghost" onclick="ghLoad()" style="flex:1;justify-content:center">↓ Load</button>
+          </div>
+          <div style="font-size:10px;color:var(--text3);margin-top:8px" id="ghLastSync"></div>
+          <button onclick="resetGhToken()" style="background:none;border:none;font-size:10px;color:var(--text3);cursor:pointer;margin-top:6px;padding:0;text-decoration:underline">Change token</button>
         </div>
-        <div style="font-size:10px;color:var(--text3);margin-top:8px" id="driveLastSync"></div>
+
+        <!-- Drive file upload still works -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between">
+          <span>📎 Invoice files → Google Drive folder</span>
+          <a href="https://drive.google.com/drive/folders/1O6-BSraooksHEK7AmOmYWtke7yQx1aYE" target="_blank" style="color:var(--blue);font-size:11px">📁 Open folder</a>
+        </div>
       </div>
 
       <!-- Local Backup & Restore -->
@@ -803,8 +834,9 @@ function enterApp(username){
   document.getElementById('navUser').textContent=username;
   startSessionTimer();
   initApp();
-  // Init Drive after a short delay to let Google GSI load
-  setTimeout(initDriveUI, 800);
+  // Init GitHub storage (primary) + Drive (for file uploads)
+  setTimeout(initGitHub, 300);
+  setTimeout(initDriveUI, 600);
 }
 
 function doLogout(){
@@ -983,18 +1015,18 @@ const SEED=[
 
 function initApp(){
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
-  const hasDrive = !!localStorage.getItem('drive_client_id');
-  const hasLocal = !!localStorage.getItem('eligens_inv');
+  const hasGh    = !!localStorage.getItem('gh_pat');
+  const hasLocal  = !!localStorage.getItem('eligens_inv');
 
   if(hasLocal){
-    // We have real saved data — load it immediately
+    // Instantly load from localStorage — GitHub will refresh in background
     invoices=JSON.parse(localStorage.getItem('eligens_inv'));
-  } else if(hasDrive){
-    // Drive is configured but no local data yet — show loading state, Drive will populate
+  } else if(hasGh){
+    // GitHub token exists but no local cache — show spinner, ghLoad() will populate
     invoices=[];
     showDriveLoading(true);
   } else {
-    // No Drive, no local — use SEED as starting data
+    // First time ever — load SEED data so app isn't empty
     invoices=SEED.map(i=>({...i}));
   }
 
@@ -1025,9 +1057,13 @@ function showDriveLoading(show){
 function save(){
   // Always save to localStorage (instant, reliable)
   localStorage.setItem('eligens_inv',JSON.stringify(invoices));
-  // Auto-sync to Drive via Apps Script if configured (background, non-blocking)
+  // Auto-save to GitHub if token configured (background, non-blocking)
+  if(getGhToken()){
+    ghSave().catch(err=>console.warn('Auto GitHub save failed:',err));
+  }
+  // Also sync to Drive for file uploads (background)
   if(getAppsScriptUrl()){
-    driveSyncBackup().catch(err=>console.warn('Auto Drive sync failed:',err));
+    driveSyncBackup().catch(()=>{});
   }
 }
 
@@ -1403,6 +1439,202 @@ function setUploadFile(file){
   }
 }
 
+
+// ══════════════════════════════════════════
+// GITHUB DATA STORAGE — primary persistence
+// ══════════════════════════════════════════
+const GH_REPO  = 'dialdise/invoices';
+const GH_BRANCH = 'main';
+const GH_FILE  = 'data.json';
+const GH_API   = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_FILE;
+
+function getGhToken(){ return localStorage.getItem('gh_pat') || ''; }
+
+function saveGhToken(){
+  const tok = document.getElementById('ghToken').value.trim();
+  if(!tok){ toast('⚠️ Paste your GitHub token first'); return; }
+  localStorage.setItem('gh_pat', tok);
+  showGhControls(true);
+  toast('✅ Token saved — connecting…');
+  // Immediately load data from GitHub
+  ghLoad();
+}
+
+function resetGhToken(){
+  localStorage.removeItem('gh_pat');
+  localStorage.removeItem('gh_file_sha');
+  showGhControls(false);
+}
+
+function showGhControls(connected){
+  document.getElementById('ghSetup').style.display    = connected ? 'none'  : 'block';
+  document.getElementById('ghControls').style.display = connected ? 'block' : 'none';
+  const navBtn = document.getElementById('navGhBtn');
+  if(navBtn) navBtn.style.display = connected ? 'flex' : 'none';
+}
+
+function setGhStatus(state, msg){
+  const dot  = document.getElementById('ghStatusDot');
+  const text = document.getElementById('ghStatusText');
+  const navL = document.getElementById('navGhLabel');
+  const colors = { ok:'var(--accent)', saving:'var(--accent2)', error:'var(--red)', loading:'var(--accent2)' };
+  const navLabels = { ok:'Saved ✓', saving:'Saving…', error:'Error', loading:'Loading…' };
+  if(dot)  dot.style.background = colors[state] || 'var(--border)';
+  if(text) text.textContent = msg || 'Connected';
+  if(navL) navL.textContent = navLabels[state] || 'Save';
+}
+
+async function ghSave(){
+  const token = getGhToken();
+  if(!token){ toast('⚠️ Add your GitHub token in Settings first'); showPage('settings', document.querySelectorAll('.nav-tab')[4]); return; }
+
+  const btn = document.getElementById('ghSaveBtn');
+  if(btn) btn.disabled = true;
+  setGhStatus('saving', 'Saving to GitHub…');
+
+  try {
+    const payload = {
+      version: 2,
+      saved: new Date().toISOString(),
+      invoices: invoices,
+      vendors: getVendorRegistry(),
+      categories: getCategories()
+    };
+    const content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+
+    // Get current SHA (needed to update existing file)
+    const sha = localStorage.getItem('gh_file_sha') || await ghGetSha();
+
+    const body = {
+      message: 'Update invoice data — ' + new Date().toLocaleString('en-GB'),
+      content: content,
+      branch: GH_BRANCH
+    };
+    if(sha) body.sha = sha;
+
+    const r = await fetch(GH_API, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github+json'
+      },
+      body: JSON.stringify(body)
+    });
+
+    if(!r.ok){
+      const err = await r.json();
+      // SHA mismatch — fetch fresh SHA and retry once
+      if(r.status === 409 || (err.message && err.message.includes('sha'))){
+        localStorage.removeItem('gh_file_sha');
+        const freshSha = await ghGetSha();
+        if(freshSha){ body.sha = freshSha; }
+        const r2 = await fetch(GH_API, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/vnd.github+json'}, body:JSON.stringify(body) });
+        if(!r2.ok) throw new Error('Save failed after SHA refresh: ' + r2.status);
+        const d2 = await r2.json();
+        if(d2.content && d2.content.sha) localStorage.setItem('gh_file_sha', d2.content.sha);
+      } else {
+        throw new Error(err.message || 'HTTP ' + r.status);
+      }
+    } else {
+      const data = await r.json();
+      if(data.content && data.content.sha) localStorage.setItem('gh_file_sha', data.content.sha);
+    }
+
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setGhStatus('ok', 'Saved at ' + now + ' · ' + invoices.length + ' invoices');
+    const lastEl = document.getElementById('ghLastSync');
+    if(lastEl) lastEl.textContent = 'Last saved: ' + new Date().toLocaleString('en-GB');
+    toast('💾 Saved to GitHub (' + invoices.length + ' invoices)');
+
+  } catch(err){
+    setGhStatus('error', 'Save failed: ' + err.message.substring(0,40));
+    toast('❌ GitHub save failed: ' + err.message);
+  }
+  if(btn) btn.disabled = false;
+}
+
+async function ghGetSha(){
+  const token = getGhToken();
+  if(!token) return null;
+  try {
+    const r = await fetch(GH_API + '?ref=' + GH_BRANCH, {
+      headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+    });
+    if(!r.ok) return null;
+    const data = await r.json();
+    if(data.sha) localStorage.setItem('gh_file_sha', data.sha);
+    return data.sha || null;
+  } catch(e){ return null; }
+}
+
+async function ghLoad(){
+  const token = getGhToken();
+  if(!token) return;
+
+  setGhStatus('loading', 'Loading from GitHub…');
+  showDriveLoading(true);
+
+  try {
+    const r = await fetch(GH_API + '?ref=' + GH_BRANCH, {
+      headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+    });
+
+    if(r.status === 404){
+      // File doesn't exist yet — first time, save current data
+      showDriveLoading(false);
+      setGhStatus('ok', 'Connected — no data file yet');
+      await ghSave(); // create the file
+      return;
+    }
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+
+    const meta = await r.json();
+    if(meta.sha) localStorage.setItem('gh_file_sha', meta.sha);
+
+    // Decode base64 content
+    const decoded = decodeURIComponent(escape(atob(meta.content.replace(/\n/g,''))));
+    const data = JSON.parse(decoded);
+
+    if(!data.invoices || !Array.isArray(data.invoices)) throw new Error('Invalid data format');
+
+    invoices = data.invoices;
+    nextId = Math.max(...invoices.map(i=>i.id), 0) + 1;
+    localStorage.setItem('eligens_inv', JSON.stringify(invoices));
+    if(data.vendors) saveVendorRegistry(data.vendors);
+    if(data.categories) saveCategories(data.categories);
+    sanitiseLinks();
+    buildVendorRegistryFromSeed();
+    refreshAllCategorySelects();
+    renderCatChips();
+    populateMonthFilter();
+    updateEmailSelect();
+    showDriveLoading(false);
+    renderAll();
+
+    const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+    setGhStatus('ok', 'Loaded at ' + now + ' · ' + invoices.length + ' invoices');
+    const lastEl = document.getElementById('ghLastSync');
+    if(lastEl) lastEl.textContent = 'Loaded from GitHub: ' + new Date().toLocaleString('en-GB');
+    toast('✅ Data loaded from GitHub (' + invoices.length + ' invoices)');
+
+  } catch(err){
+    showDriveLoading(false);
+    setGhStatus('error', 'Load failed: ' + err.message.substring(0,40));
+    toast('❌ GitHub load failed: ' + err.message);
+  }
+}
+
+function initGitHub(){
+  const token = getGhToken();
+  if(token){
+    document.getElementById('ghToken').value = token;
+    showGhControls(true);
+    // Load data from GitHub on startup
+    setTimeout(ghLoad, 800);
+  }
+}
+
 // ══════════════════════════════════════════
 // GOOGLE DRIVE SYNC (via Apps Script — no login needed)
 // ══════════════════════════════════════════
@@ -1412,10 +1644,8 @@ const DRIVE_FOLDER_ID = '1O6-BSraooksHEK7AmOmYWtke7yQx1aYE';
 function getAppsScriptUrl(){ return APPS_SCRIPT_URL; }
 
 function initDriveUI(){
-  const navBtn = document.getElementById('navDriveBtn');
-  if(navBtn) navBtn.style.display='flex';
-  // Auto-load from Drive on startup
-  setTimeout(driveLoadBackup, 1500);
+  // Drive is only used for file uploads now — data is stored in GitHub
+  // (keeping driveLoadBackup as fallback if GitHub fails)
 }
 
 function showAppsScriptStatus(msg, color){
