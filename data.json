@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-03-31T07:25:40.985Z",
+  "saved": "2026-03-31T07:30:08.602Z",
   "invoices": [
     {
       "id": 95,
@@ -15,7 +15,7 @@
       "amount": 106.98,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 1,
