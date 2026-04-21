@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-21T07:34:58.485Z",
+  "saved": "2026-04-21T07:35:00.583Z",
   "invoices": [
     {
       "id": 106,
@@ -1579,7 +1579,7 @@
     }
   ],
   "vendors": {
-    "TERSUS SIA": "Security",
+    "TERSUS SIA": "Cleaning",
     "GRIFS AG SIA": "Security",
     "DHL Express Latvia SIA": "Logistics",
     "LATVIJAS PASTS VAS": "Postal",
