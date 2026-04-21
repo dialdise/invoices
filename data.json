@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-21T07:35:00.583Z",
+  "saved": "2026-04-21T07:35:52.210Z",
   "invoices": [
     {
       "id": 106,
@@ -60,7 +60,7 @@
       "amount": 50.18,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 102,
@@ -75,7 +75,7 @@
       "amount": 257.57,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 101,
@@ -90,7 +90,7 @@
       "amount": 41.14,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 100,
@@ -105,7 +105,7 @@
       "amount": 12.1,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 99,
@@ -120,7 +120,7 @@
       "amount": 21.17,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 98,
@@ -135,7 +135,7 @@
       "amount": 24.2,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 97,
@@ -150,7 +150,7 @@
       "amount": 170.35,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 96,
@@ -165,7 +165,7 @@
       "amount": 98.31,
       "vat": "",
       "notes": "",
-      "link": "https://drive.google.com/file/d/undefined/view"
+      "link": ""
     },
     {
       "id": 95,
