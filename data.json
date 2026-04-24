@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-24T08:38:58.857Z",
+  "saved": "2026-04-24T08:39:46.426Z",
   "invoices": [
     {
       "id": 107,
@@ -80,7 +80,7 @@
     {
       "id": 102,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "UR2604067",
       "vendor": "TERSUS SIA",
       "category": "Cleaning",
