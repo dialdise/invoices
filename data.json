@@ -1,11 +1,11 @@
 {
   "version": 2,
-  "saved": "2026-04-24T08:38:50.874Z",
+  "saved": "2026-04-24T08:38:58.857Z",
   "invoices": [
     {
       "id": 107,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "AV111-04-2026",
       "vendor": "SIA Law Office \"INLAT PLUS international\"",
       "category": "Other",
