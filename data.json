@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-28T07:35:17.349Z",
+  "saved": "2026-04-28T07:36:28.746Z",
   "invoices": [
     {
       "id": 111,
@@ -20,13 +20,13 @@
     {
       "id": 110,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "44978791-3",
       "vendor": "TET SIA",
       "category": "Utilities",
       "date": "2026-04-22",
       "due": "2026-05-04",
-      "paidDate": "",
+      "paidDate": "2026-04-28",
       "amount": 106.98,
       "vat": "",
       "notes": "",
