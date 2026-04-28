@@ -828,15 +828,14 @@ function showLoginError(msg){
   document.getElementById('loginError').classList.add('show');
 }
 
-function enterApp(username){
+async function enterApp(username){
   document.getElementById('loginScreen').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('navUser').textContent=username;
   startSessionTimer();
   initApp();
-  // Init GitHub storage (primary) + Drive (for file uploads)
-  setTimeout(initGitHub, 300);
-  setTimeout(initDriveUI, 600);
+  await initGitHub();
+  setTimeout(initDriveUI, 300);
 }
 
 function doLogout(){
@@ -1140,7 +1139,7 @@ function updateStats(){
 
 function getStatus(inv){
   if(inv.status==='paid') return 'paid';
-  if(inv.due&&new Date(inv.due)<new Date()) return 'overdue';
+  if(inv.due && inv.due < new Date().toISOString().split('T')[0]) return 'overdue';
   return 'unpaid';
 }
 
@@ -1527,12 +1526,32 @@ async function ghSave(){
       // SHA mismatch — fetch fresh SHA and retry once
       if(r.status === 409 || (err.message && err.message.includes('sha'))){
         localStorage.removeItem('gh_file_sha');
-        const freshSha = await ghGetSha();
-        if(freshSha){ body.sha = freshSha; }
+        const freshR = await fetch(GH_API + '?ref=' + GH_BRANCH, {
+          headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+        });
+        if(!freshR.ok) throw new Error('Save failed: could not fetch remote for merge');
+        const freshMeta = await freshR.json();
+        if(freshMeta.sha) localStorage.setItem('gh_file_sha', freshMeta.sha);
+        try {
+          const remoteDecoded = decodeURIComponent(escape(atob(freshMeta.content.replace(/\n/g,''))));
+          const remoteData = JSON.parse(remoteDecoded);
+          if(remoteData.invoices && Array.isArray(remoteData.invoices)){
+            const remoteMap = new Map(remoteData.invoices.map(i=>[i.id, i]));
+            const localMap  = new Map(invoices.map(i=>[i.id, i]));
+            const merged = [...new Map([...remoteMap, ...localMap]).values()].sort((a,b)=>b.id-a.id);
+            invoices = merged;
+            nextId = Math.max(...merged.map(i=>i.id), 0) + 1;
+            localStorage.setItem('eligens_inv', JSON.stringify(invoices));
+            payload.invoices = merged;
+            body.content = btoa(unescape(encodeURIComponent(JSON.stringify(payload, null, 2))));
+          }
+        } catch(mergeErr){ console.warn('Merge failed, saving local data:', mergeErr); }
+        if(freshMeta.sha) body.sha = freshMeta.sha;
         const r2 = await fetch(GH_API, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/vnd.github+json'}, body:JSON.stringify(body) });
-        if(!r2.ok) throw new Error('Save failed after SHA refresh: ' + r2.status);
+        if(!r2.ok) throw new Error('Save failed after merge: ' + r2.status);
         const d2 = await r2.json();
         if(d2.content && d2.content.sha) localStorage.setItem('gh_file_sha', d2.content.sha);
+        renderAll();
       } else if(r.status === 403){
         throw new Error('Token needs "Contents: Read and Write" permission — go to Settings → GitHub Data Storage to update it');
       } else if(r.status === 401){
@@ -1629,13 +1648,12 @@ async function ghLoad(){
   }
 }
 
-function initGitHub(){
+async function initGitHub(){
   const token = getGhToken();
   if(token){
     document.getElementById('ghToken').value = token;
     showGhControls(true);
-    // Load data from GitHub on startup
-    setTimeout(ghLoad, 800);
+    return ghLoad();
   }
 }
 
