@@ -1596,7 +1596,7 @@ async function ghLoad(){
   if(!token) return;
 
   setGhStatus('loading', 'Loading from GitHub…');
-  showDriveLoading(true);
+  if(!invoices || !invoices.length) showDriveLoading(true);
 
   try {
     const r = await fetch(GH_API + '?ref=' + GH_BRANCH, {
@@ -1645,6 +1645,7 @@ async function ghLoad(){
     showDriveLoading(false);
     setGhStatus('error', 'Load failed: ' + err.message.substring(0,40));
     toast('❌ GitHub load failed: ' + err.message);
+    renderAll();
   }
 }
 
