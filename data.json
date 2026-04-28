@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-28T07:34:27.998Z",
+  "saved": "2026-04-28T07:34:37.822Z",
   "invoices": [
     {
       "id": 111,
@@ -1666,8 +1666,7 @@
     "ProClear Kustoms IK": "Cleaning",
     "Rolling SIA": "Logistics",
     "FedEx Express Latvia SIA": "Logistics",
-    "SIA ProClear K": "Cleaning",
-    "SIA Law Office \"INLAT PLUS international\"": "Other"
+    "SIA ProClear K": "Cleaning"
   },
   "categories": [
     "Logistics",
