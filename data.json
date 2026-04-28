@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-28T07:38:51.526Z",
+  "saved": "2026-04-28T07:38:59.278Z",
   "invoices": [
     {
       "id": 111,
@@ -56,7 +56,7 @@
       "category": "Logistics",
       "date": "2026-04-23",
       "due": "2026-04-24",
-      "paidDate": "",
+      "paidDate": "2026-04-28",
       "amount": 70.12,
       "vat": "",
       "notes": "",
