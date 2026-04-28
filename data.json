@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-28T07:41:58.726Z",
+  "saved": "2026-04-28T07:43:21.729Z",
   "invoices": [
     {
       "id": 111,
@@ -185,13 +185,13 @@
     {
       "id": 99,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "MUP2004269",
       "vendor": "LATVIJAS PASTS VAS",
-      "category": "Postal",
+      "category": "Logistics",
       "date": "2026-03-31",
       "due": "2026-04-18",
-      "paidDate": "",
+      "paidDate": "2026-04-28",
       "amount": 21.17,
       "vat": "",
       "notes": "",
@@ -1657,7 +1657,7 @@
     "TERSUS SIA": "Cleaning",
     "GRIFS AG SIA": "Security",
     "DHL Express Latvia SIA": "Logistics",
-    "LATVIJAS PASTS VAS": "Postal",
+    "LATVIJAS PASTS VAS": "Logistics",
     "VENDEN, SIA": "Office Supplies",
     "MyDello OÜ": "Logistics",
     "Lindstrom SIA": "Cleaning",
