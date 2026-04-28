@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-04-28T07:43:21.729Z",
+  "saved": "2026-04-28T07:44:12.695Z",
   "invoices": [
     {
       "id": 111,
@@ -200,13 +200,13 @@
     {
       "id": 98,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "BR2327763",
       "vendor": "VENDEN, SIA",
       "category": "Office Supplies",
       "date": "2026-04-01",
       "due": "2026-04-15",
-      "paidDate": "",
+      "paidDate": "2026-04-28",
       "amount": 24.2,
       "vat": "",
       "notes": "",
