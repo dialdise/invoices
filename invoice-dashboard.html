@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Eligens — Invoices</title>
+<title>Eligens — Invoice Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 /* ── TOKENS ── */
@@ -213,6 +213,26 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 .act-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:5px;color:var(--text3);font-size:13px;transition:all .12s}
 .act-btn:hover{background:var(--surface2);color:var(--accent)}
 .act-btn.del:hover{color:var(--red)}
+.act-btn.pay:hover{color:var(--accent)}
+
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:var(--text)}
+.sort-icon{margin-left:3px;font-size:9px;opacity:.35}
+thead th.sort-asc .sort-icon::after{content:'▲';opacity:1}
+thead th.sort-desc .sort-icon::after{content:'▼';opacity:1}
+thead th.sortable .sort-icon::after{content:'⇅'}
+
+.row-count{font-size:11px;color:var(--text3);font-family:var(--mono);padding:6px 14px;border-top:1px solid var(--border);background:var(--surface2)}
+
+.quick-pay-btn{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;
+  background:var(--accent-light);color:var(--accent);
+  border:1px solid var(--accent);cursor:pointer;
+  transition:all .15s;white-space:nowrap;
+}
+.quick-pay-btn:hover{background:var(--accent);color:#fff}
+.quick-pay-btn:disabled{opacity:.4;cursor:not-allowed}
 
 /* OVERLAY / MODAL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(3px)}
@@ -344,18 +364,18 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
   <div class="login-card">
     <div class="login-logo">
       <div class="login-logo-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5">
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <path d="M5 3c3 2 11 2 14 4"/><path d="M19 3C16 5 8 5 5 7"/><path d="M5 7c3 2 11 2 14 4"/><path d="M19 7C16 9 8 9 5 11"/><path d="M5 11c3 2 11 2 14 4"/><path d="M19 11C16 13 8 13 5 15"/><path d="M5 15c3 2 11 2 14 4"/><path d="M19 15C16 17 8 17 5 19"/><line x1="9" y1="3" x2="9" y2="21" stroke-opacity=".35"/><line x1="15" y1="3" x2="15" y2="21" stroke-opacity=".35"/>
         </svg>
       </div>
       <div>
         <div class="login-logo-text">Eligens</div>
-        <div class="login-logo-sub">Invoice Management</div>
+        <div class="login-logo-sub">Invoice Management · DNA Analytics</div>
       </div>
     </div>
 
     <div class="login-title">Welcome back</div>
-    <div class="login-sub">Sign in to access your invoices</div>
+    <div class="login-sub">Sign in to access your invoice dashboard</div>
 
     <div class="login-lockout" id="lockoutMsg"></div>
     <div class="login-error" id="loginError">
@@ -392,7 +412,9 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
   <nav class="topnav">
     <div class="brand">
       <div class="brand-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a472a" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a472a" stroke-width="2">
+          <path d="M5 3c3 2 11 2 14 4"/><path d="M19 3C16 5 8 5 5 7"/><path d="M5 7c3 2 11 2 14 4"/><path d="M19 7C16 9 8 9 5 11"/><path d="M5 11c3 2 11 2 14 4"/><path d="M19 11C16 13 8 13 5 15"/><line x1="9" y1="3" x2="9" y2="21" stroke-opacity=".4"/><line x1="15" y1="3" x2="15" y2="21" stroke-opacity=".4"/>
+        </svg>
       </div>
       <span class="brand-name">Eligens</span><span class="brand-sub">/ Invoices</span>
     </div>
@@ -415,6 +437,10 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 
   <!-- INVOICES PAGE -->
   <div class="page active" id="page-invoices">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">Overview</div>
+      <span id="lastRefreshedLabel" style="font-size:10px;color:var(--text3);font-family:var(--mono)"></span>
+    </div>
     <div class="stats">
       <div class="stat"><div class="stat-label">Total</div><div class="stat-val b" id="s-total">0</div><div class="stat-sub">invoices</div></div>
       <div class="stat"><div class="stat-label">Total Amount</div><div class="stat-val b" id="s-amount">€0</div><div class="stat-sub">all invoices</div></div>
@@ -428,14 +454,28 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
       <select class="filter" id="filt-priority" onchange="applyFilters()"><option value="">All Priorities</option><option value="URGENT">Urgent</option><option value="H">High</option><option value="M">Medium</option></select>
       <select class="filter" id="filt-category" onchange="applyFilters()"><option value="">All Categories</option></select>
       <select class="filter" id="filt-month" onchange="applyFilters()"><option value="">All Months</option></select>
+      <span id="rowCount" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></span>
       <div class="spacer"></div>
+      <button class="btn btn-ghost" id="refreshBtn" onclick="manualRefresh()" title="Reload from GitHub">↺ Refresh</button>
       <button class="btn btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
       <button class="btn btn-primary" onclick="showPage('add',document.querySelectorAll('.nav-tab')[1])">+ New Invoice</button>
     </div>
     <div class="table-wrap">
-      <table><thead><tr><th>Priority</th><th>Status</th><th>Invoice #</th><th>Vendor</th><th>Category</th><th>Invoice Date</th><th>Due Date</th><th>Amount €</th><th>Payment Date</th><th>Notes</th><th>Document</th><th>Actions</th></tr></thead>
+      <table><thead><tr>
+        <th class="sortable" id="th-priority" onclick="sortBy('priority')">Priority<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-status" onclick="sortBy('status')">Status<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-num" onclick="sortBy('num')">Invoice #<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-vendor" onclick="sortBy('vendor')">Vendor<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-category" onclick="sortBy('category')">Category<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-date" onclick="sortBy('date')">Invoice Date<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-due" onclick="sortBy('due')">Due Date<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-amount" onclick="sortBy('amount')">Amount €<span class="sort-icon"></span></th>
+        <th class="sortable" id="th-paidDate" onclick="sortBy('paidDate')">Payment Date<span class="sort-icon"></span></th>
+        <th>Notes</th><th>Document</th><th>Actions</th>
+      </tr></thead>
       <tbody id="invoiceBody"></tbody></table>
       <div id="emptyMsg" style="padding:40px;text-align:center;color:var(--text3);font-size:13px;display:none">No invoices found</div>
+      <div class="row-count" id="tableFooter" style="display:none"></div>
     </div>
   </div>
 
@@ -468,7 +508,7 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
         </div>
         <div class="grid3">
           <div class="fg"><label>Invoice Date *</label><input class="fc" id="f-date" type="date"></div>
-          <div class="fg"><label>Due Date *</label><input class="fc" id="f-due" type="date"></div>
+          <div class="fg"><label>Due Date</label><input class="fc" id="f-due" type="date"></div>
           <div class="fg"><label>Payment Date</label><input class="fc" id="f-paiddate" type="date"></div>
         </div>
         <div class="grid2">
@@ -674,6 +714,8 @@ td.amt{font-family:var(--mono);font-weight:700;color:var(--text)}
 'use strict';
 // ── Runtime state (var = hoisted, safe for boot sequence)
 var invoices, nextId, pendingFile = null, invoicesFolderId = null, driveAccessToken = null, acFocusIdx = -1;
+var sortCol = 'id', sortDir = -1; // default: newest first
+var lastGhLoadTs = 0;
 
 
 // ══════════════════════════════════════════
@@ -1087,40 +1129,87 @@ function applyFilters(){
   const pr=document.getElementById('filt-priority').value;
   const cat=document.getElementById('filt-category').value;
   const mo=document.getElementById('filt-month').value;
-  const data=invoices.filter(i=>{
-    if(q&&!i.vendor.toLowerCase().includes(q)&&!i.num.toLowerCase().includes(q)&&!i.category.toLowerCase().includes(q)) return false;
+  let data=invoices.filter(i=>{
+    if(q&&!i.vendor.toLowerCase().includes(q)&&!i.num.toLowerCase().includes(q)&&!(i.category||'').toLowerCase().includes(q)&&!(i.notes||'').toLowerCase().includes(q)) return false;
     if(st&&getStatus(i)!==st) return false;
     if(pr&&i.priority!==pr) return false;
     if(cat&&i.category!==cat) return false;
     if(mo&&!i.date.startsWith(mo)) return false;
     return true;
   });
+  // Sort
+  data.sort((a,b)=>{
+    if(sortCol==='amount') return sortDir*(a.amount-b.amount);
+    if(sortCol==='id') return sortDir*(a.id-b.id);
+    const av=a[sortCol]||'', bv=b[sortCol]||'';
+    return sortDir*(av<bv?-1:av>bv?1:0);
+  });
+  // Update sort header indicators
+  document.querySelectorAll('thead th.sortable').forEach(th=>{
+    th.classList.remove('sort-asc','sort-desc');
+    if(th.id==='th-'+sortCol) th.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  });
   renderTable(data);
+  // Row count
+  const rc=document.getElementById('rowCount');
+  if(rc) rc.textContent=data.length===invoices.length?invoices.length+' invoices':data.length+' of '+invoices.length+' invoices';
+}
+
+function sortBy(col){
+  if(sortCol===col) sortDir*=-1;
+  else{sortCol=col;sortDir=1;}
+  applyFilters();
 }
 
 function renderTable(data){
   const tbody=document.getElementById('invoiceBody');
   const empty=document.getElementById('emptyMsg');
-  if(!data.length){tbody.innerHTML='';empty.style.display='block';return;}
+  const footer=document.getElementById('tableFooter');
+  if(!data.length){tbody.innerHTML='';empty.style.display='block';if(footer)footer.style.display='none';return;}
   empty.style.display='none';
   tbody.innerHTML=data.map(inv=>{
     const s=getStatus(inv);
     const rs=inv.notes&&inv.notes.includes('CHANGED')?'background:#fffbf0':'';
+    const canPay=s!=='paid';
     return `<tr style="${rs}">
       <td>${inv.priority?`<span class="prio prio-${inv.priority}">${inv.priority}</span>`:'<span style="color:var(--text3)">—</span>'}</td>
       <td><span class="badge badge-${s}"><span class="dot"></span>${s}</span></td>
-      <td class="bold">${inv.num}</td>
-      <td style="font-weight:500;color:var(--text)">${inv.vendor}</td>
-      <td><span class="cat">${inv.category}</span></td>
+      <td class="bold">${esc(inv.num)}</td>
+      <td style="font-weight:500;color:var(--text)">${esc(inv.vendor)}</td>
+      <td><span class="cat">${esc(inv.category)}</span></td>
       <td>${fd(inv.date)}</td>
       <td style="color:${s==='overdue'?'var(--red)':'inherit'};font-weight:${s==='overdue'?700:400}">${fd(inv.due)}${s==='overdue'?' ⚠':''}</td>
       <td class="amt">€${inv.amount.toFixed(2)}</td>
       <td style="color:var(--accent)">${inv.paidDate?fd(inv.paidDate):'<span style="color:var(--text3)">—</span>'}</td>
-      <td style="max-width:150px;font-size:11px;color:${inv.notes?'var(--accent2)':'var(--text3)'}">${inv.notes||'—'}</td>
-      <td>${validLink(inv.link)?`<a href="${inv.link}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">📄 View</a>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
-      <td><button class="act-btn" onclick="openEdit(${inv.id})" title="Edit">✏️</button><button class="act-btn del" onclick="deleteInv(${inv.id})" title="Delete">✕</button></td>
+      <td style="max-width:150px;font-size:11px;color:${inv.notes?'var(--accent2)':'var(--text3)'}">${esc(inv.notes)||'—'}</td>
+      <td>${validLink(inv.link)?`<a href="${esc(inv.link)}" target="_blank" style="color:var(--blue);font-size:11px;text-decoration:none">📄 View</a>`:'<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+      <td style="white-space:nowrap">
+        ${canPay?`<button class="quick-pay-btn" onclick="quickPay(${inv.id})" title="Mark as paid today">✓ Pay</button> `:''}
+        <button class="act-btn" onclick="openEdit(${inv.id})" title="Edit">✏️</button>
+        <button class="act-btn del" onclick="deleteInv(${inv.id})" title="Delete">✕</button>
+      </td>
     </tr>`;
   }).join('');
+  if(footer){
+    const totalShown=data.reduce((s,i)=>s+i.amount,0);
+    footer.style.display='block';
+    footer.textContent=`Showing ${data.length} invoice${data.length===1?'':'s'} · Total: €${totalShown.toFixed(2)}`;
+  }
+}
+
+function esc(str){
+  if(!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function quickPay(id){
+  const inv=invoices.find(i=>i.id===id);
+  if(!inv||getStatus(inv)==='paid') return;
+  if(!confirm(`Mark invoice ${inv.num} from ${inv.vendor} as paid today?`)) return;
+  inv.status='paid';
+  inv.paidDate=new Date().toISOString().split('T')[0];
+  save();renderAll();
+  toast('✅ Invoice #'+inv.num+' marked as paid');
 }
 
 function updateStats(){
@@ -1150,7 +1239,7 @@ async function saveInvoice(){
   const date=document.getElementById('f-date').value;
   const due=document.getElementById('f-due').value;
   const amount=parseFloat(document.getElementById('f-amount').value);
-  if(!num||!vendor||!date||!due||isNaN(amount)){toast('⚠️ Fill all required fields');return;}
+  if(!num||!vendor||!date||isNaN(amount)||amount<=0){toast('⚠️ Fill all required fields (Invoice #, Vendor, Date, Amount)');return;}
 
   // Disable save button during upload
   const saveBtn=document.getElementById('saveBtn');
@@ -1248,12 +1337,19 @@ function deleteInv(id){
 }
 
 function confirmWipe(){
-  if(!confirm('⚠️ Are you sure? This will permanently delete ALL invoice data.'))return;
-  if(!confirm('Last chance — delete everything?'))return;
+  if(!confirm('⚠️ Are you sure? This will permanently delete ALL local invoice data.'))return;
+  if(!confirm('Last chance — delete everything locally?'))return;
   localStorage.removeItem('eligens_inv');
-  invoices=SEED.map(i=>({...i}));
-  nextId=Math.max(...invoices.map(i=>i.id))+1;
-  save();renderAll();toast('🗑 Data wiped and reset to defaults');
+  localStorage.removeItem('gh_file_sha');
+  invoices=[];nextId=1;
+  if(getGhToken()){
+    toast('🔄 Local data cleared — reloading from GitHub…');
+    ghLoad();
+  } else {
+    invoices=SEED.map(i=>({...i}));
+    nextId=Math.max(...invoices.map(i=>i.id))+1;
+    save();renderAll();toast('🗑 Data reset to defaults');
+  }
 }
 
 // EMAIL
@@ -1412,6 +1508,28 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+// Auto-refresh when user returns to this tab (fixes stale data without closing the tab)
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && isSessionValid() && getGhToken()){
+    const THROTTLE_MS = 90_000; // at most every 90 seconds
+    if(Date.now() - lastGhLoadTs > THROTTLE_MS){
+      ghLoad().catch(()=>{});
+    }
+  }
+});
+
+function manualRefresh(){
+  if(!getGhToken()){toast('⚠️ Connect GitHub in Settings to refresh');return;}
+  const btn=document.getElementById('refreshBtn');
+  if(btn){btn.disabled=true;btn.textContent='↺ Loading…';}
+  ghLoad().finally(()=>{if(btn){btn.disabled=false;btn.textContent='↺ Refresh';}});
+}
+
+function updateLastRefreshed(){
+  const el=document.getElementById('lastRefreshedLabel');
+  if(el) el.textContent='Updated: '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+}
+
 function handleFileSelect(input){
   if(input.files[0]) setUploadFile(input.files[0]);
 }
@@ -1526,8 +1644,9 @@ async function ghSave(){
       // SHA mismatch — fetch fresh SHA and retry once
       if(r.status === 409 || (err.message && err.message.includes('sha'))){
         localStorage.removeItem('gh_file_sha');
-        const freshR = await fetch(GH_API + '?ref=' + GH_BRANCH, {
-          headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+        const freshR = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
+          headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Cache-Control':'no-cache, no-store' },
+          cache: 'no-store'
         });
         if(!freshR.ok) throw new Error('Save failed: could not fetch remote for merge');
         const freshMeta = await freshR.json();
@@ -1568,6 +1687,7 @@ async function ghSave(){
     setGhStatus('ok', 'Saved at ' + now + ' · ' + invoices.length + ' invoices');
     const lastEl = document.getElementById('ghLastSync');
     if(lastEl) lastEl.textContent = 'Last saved: ' + new Date().toLocaleString('en-GB');
+    updateLastRefreshed();
     toast('💾 Saved to GitHub (' + invoices.length + ' invoices)');
 
   } catch(err){
@@ -1581,8 +1701,13 @@ async function ghGetSha(){
   const token = getGhToken();
   if(!token) return null;
   try {
-    const r = await fetch(GH_API + '?ref=' + GH_BRANCH, {
-      headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+    const r = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Accept':'application/vnd.github+json',
+        'Cache-Control':'no-cache, no-store'
+      },
+      cache: 'no-store'
     });
     if(!r.ok) return null;
     const data = await r.json();
@@ -1599,8 +1724,14 @@ async function ghLoad(){
   if(!invoices || !invoices.length) showDriveLoading(true);
 
   try {
-    const r = await fetch(GH_API + '?ref=' + GH_BRANCH, {
-      headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' }
+    // Cache-bust: append timestamp so browser never serves a stale GitHub API response
+    const r = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
+      headers:{
+        'Authorization':'Bearer '+token,
+        'Accept':'application/vnd.github+json',
+        'Cache-Control':'no-cache, no-store'
+      },
+      cache: 'no-store'
     });
 
     if(r.status === 404){
@@ -1635,10 +1766,12 @@ async function ghLoad(){
     showDriveLoading(false);
     renderAll();
 
+    lastGhLoadTs = Date.now();
     const now = new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
     setGhStatus('ok', 'Loaded at ' + now + ' · ' + invoices.length + ' invoices');
     const lastEl = document.getElementById('ghLastSync');
     if(lastEl) lastEl.textContent = 'Loaded from GitHub: ' + new Date().toLocaleString('en-GB');
+    updateLastRefreshed();
     toast('✅ Data loaded from GitHub (' + invoices.length + ' invoices)');
 
   } catch(err){
