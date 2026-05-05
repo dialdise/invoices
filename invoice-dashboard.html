@@ -1645,7 +1645,7 @@ async function ghSave(){
       if(r.status === 409 || (err.message && err.message.includes('sha'))){
         localStorage.removeItem('gh_file_sha');
         const freshR = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
-          headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json', 'Cache-Control':'no-cache, no-store' },
+          headers:{ 'Authorization':'Bearer '+token, 'Accept':'application/vnd.github+json' },
           cache: 'no-store'
         });
         if(!freshR.ok) throw new Error('Save failed: could not fetch remote for merge');
@@ -1704,8 +1704,7 @@ async function ghGetSha(){
     const r = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
       headers:{
         'Authorization':'Bearer '+token,
-        'Accept':'application/vnd.github+json',
-        'Cache-Control':'no-cache, no-store'
+        'Accept':'application/vnd.github+json'
       },
       cache: 'no-store'
     });
@@ -1724,12 +1723,11 @@ async function ghLoad(){
   if(!invoices || !invoices.length) showDriveLoading(true);
 
   try {
-    // Cache-bust: append timestamp so browser never serves a stale GitHub API response
+    // Cache-bust: unique timestamp in URL + no-store so browser never returns a stale response
     const r = await fetch(GH_API + '?ref=' + GH_BRANCH + '&_=' + Date.now(), {
       headers:{
         'Authorization':'Bearer '+token,
-        'Accept':'application/vnd.github+json',
-        'Cache-Control':'no-cache, no-store'
+        'Accept':'application/vnd.github+json'
       },
       cache: 'no-store'
     });
