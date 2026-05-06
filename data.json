@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-06T08:07:46.473Z",
+  "saved": "2026-05-06T08:07:56.777Z",
   "invoices": [
     {
       "id": 112,
@@ -1692,6 +1692,7 @@
     "Utilities",
     "Tax",
     "Postal",
-    "Other"
+    "Other",
+    "Rent"
   ]
 }
