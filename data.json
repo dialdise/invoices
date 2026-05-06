@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-06T08:07:17.481Z",
+  "saved": "2026-05-06T08:07:46.473Z",
   "invoices": [
     {
       "id": 112,
@@ -8,7 +8,7 @@
       "status": "unpaid",
       "num": "2026 - 0074",
       "vendor": "Stabu 10 Holding SIA",
-      "category": "Logistics",
+      "category": "Other",
       "date": "2026-05-01",
       "due": "2026-05-18",
       "paidDate": "",
@@ -1682,7 +1682,7 @@
     "Rolling SIA": "Logistics",
     "FedEx Express Latvia SIA": "Logistics",
     "SIA ProClear K": "Cleaning",
-    "Stabu 10 Holding SIA": "Logistics"
+    "Stabu 10 Holding SIA": "Other"
   },
   "categories": [
     "Logistics",
