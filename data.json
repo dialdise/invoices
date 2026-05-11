@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-05-11T09:30:47.697Z",
+  "saved": "2026-05-11T09:50:25.465Z",
   "invoices": [
+    {
+      "id": 113,
+      "priority": "",
+      "status": "paid",
+      "num": "BITELV/28237",
+      "vendor": "LEGAL BALANCE SIA",
+      "category": "Other",
+      "date": "2026-04-04",
+      "due": "2026-04-19",
+      "paidDate": "2026-05-11",
+      "amount": 69.05,
+      "vat": "",
+      "notes": "PAYMENT DEBT BITE",
+      "link": ""
+    },
     {
       "id": 112,
       "priority": "",
@@ -1682,7 +1697,8 @@
     "Rolling SIA": "Logistics",
     "FedEx Express Latvia SIA": "Logistics",
     "SIA ProClear K": "Cleaning",
-    "Stabu 10 Holding SIA": "Rent"
+    "Stabu 10 Holding SIA": "Rent",
+    "LEGAL BALANCE SIA": "Other"
   },
   "categories": [
     "Logistics",
