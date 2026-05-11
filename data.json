@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-06T08:08:10.347Z",
+  "saved": "2026-05-11T09:27:25.998Z",
   "invoices": [
     {
       "id": 112,
@@ -80,13 +80,13 @@
     {
       "id": 107,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "202646",
       "vendor": "SIA ProClear K",
       "category": "Cleaning",
       "date": "2026-04-23",
       "due": "2026-05-03",
-      "paidDate": "",
+      "paidDate": "2026-05-11",
       "amount": 108.9,
       "vat": "",
       "notes": "",
