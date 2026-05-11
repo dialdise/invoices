@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-11T09:30:44.797Z",
+  "saved": "2026-05-11T09:30:47.697Z",
   "invoices": [
     {
       "id": 112,
@@ -185,13 +185,13 @@
     {
       "id": 100,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "682193512",
       "vendor": "FedEx Express Latvia SIA",
       "category": "Logistics",
       "date": "2026-04-06",
       "due": "2026-04-15",
-      "paidDate": "",
+      "paidDate": "2026-05-11",
       "amount": 12.1,
       "vat": "",
       "notes": "",
