@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-25T06:12:13.957Z",
+  "saved": "2026-05-25T06:13:38.538Z",
   "invoices": [
     {
       "id": 119,
@@ -110,13 +110,13 @@
     {
       "id": 112,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "2026 - 0074",
       "vendor": "Stabu 10 Holding SIA",
       "category": "Rent",
       "date": "2026-05-01",
       "due": "2026-05-18",
-      "paidDate": "",
+      "paidDate": "2026-05-25",
       "amount": 3965.04,
       "vat": "",
       "notes": "",
