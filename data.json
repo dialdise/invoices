@@ -1,17 +1,17 @@
 {
   "version": 2,
-  "saved": "2026-05-25T06:06:26.854Z",
+  "saved": "2026-05-25T06:07:31.904Z",
   "invoices": [
     {
       "id": 119,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "2026 - 0078",
       "vendor": "Stabu 10 Holding SIA",
       "category": "Utilities",
       "date": "2026-05-18",
       "due": "2026-06-08",
-      "paidDate": "",
+      "paidDate": "2026-05-25",
       "amount": 1238.28,
       "vat": "",
       "notes": "",
