@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-25T06:11:50.789Z",
+  "saved": "2026-05-25T06:12:13.957Z",
   "invoices": [
     {
       "id": 119,
@@ -80,13 +80,13 @@
     {
       "id": 114,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "MUP2004382",
       "vendor": "LATVIJAS PASTS VAS",
       "category": "Postal",
       "date": "2026-04-30",
       "due": "2026-05-19",
-      "paidDate": "",
+      "paidDate": "2026-05-25",
       "amount": 8.62,
       "vat": "",
       "notes": "",
