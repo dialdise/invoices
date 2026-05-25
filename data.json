@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-05-25T06:13:38.538Z",
+  "saved": "2026-05-25T11:09:53.903Z",
   "invoices": [
+    {
+      "id": 120,
+      "priority": "",
+      "status": "unpaid",
+      "num": "45336967-3",
+      "vendor": "TET SIA",
+      "category": "Utilities",
+      "date": "2026-05-22",
+      "due": "",
+      "paidDate": "",
+      "amount": 106.98,
+      "vat": "",
+      "notes": "",
+      "link": "https://drive.google.com/file/d/1_XVvhGNMe8R4InYw4tnkzepGFYefJyjZ/view"
+    },
     {
       "id": 119,
       "priority": "",
