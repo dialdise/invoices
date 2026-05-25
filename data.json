@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-25T06:07:31.904Z",
+  "saved": "2026-05-25T06:08:10.587Z",
   "invoices": [
     {
       "id": 119,
@@ -20,13 +20,13 @@
     {
       "id": 118,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "UR2605066",
       "vendor": "TERSUS SIA",
       "category": "Security",
       "date": "2026-05-05",
       "due": "2026-05-10",
-      "paidDate": "",
+      "paidDate": "2026-05-25",
       "amount": 257.57,
       "vat": "",
       "notes": "",
