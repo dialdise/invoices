@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-05-27T11:35:27.783Z",
+  "saved": "2026-05-27T11:35:34.583Z",
   "invoices": [
     {
       "id": 125,
@@ -215,13 +215,13 @@
     {
       "id": 111,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "03T 6601883",
       "vendor": "VENDEN, SIA",
       "category": "Office Supplies",
       "date": "2026-04-21",
       "due": "2026-05-01",
-      "paidDate": "",
+      "paidDate": "2026-05-27",
       "amount": 21.2,
       "vat": "",
       "notes": "",
