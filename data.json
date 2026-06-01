@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-06-01T12:27:00.273Z",
+  "saved": "2026-06-01T12:27:32.827Z",
   "invoices": [
+    {
+      "id": 127,
+      "priority": "",
+      "status": "unpaid",
+      "num": "UR2606066",
+      "vendor": "TERSUS SIA",
+      "category": "Cleaning",
+      "date": "2026-06-01",
+      "due": "2026-06-05",
+      "paidDate": "",
+      "amount": 257.57,
+      "vat": "",
+      "notes": "",
+      "link": ""
+    },
     {
       "id": 126,
       "priority": "",
@@ -1879,7 +1894,7 @@
     }
   ],
   "vendors": {
-    "TERSUS SIA": "Security",
+    "TERSUS SIA": "Cleaning",
     "GRIFS AG SIA": "Security",
     "DHL Express Latvia SIA": "Logistics",
     "LATVIJAS PASTS VAS": "Postal",
