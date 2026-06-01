@@ -1,17 +1,17 @@
 {
   "version": 2,
-  "saved": "2026-06-01T12:26:54.804Z",
+  "saved": "2026-06-01T12:27:00.273Z",
   "invoices": [
     {
       "id": 126,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "34042",
       "vendor": "MyDello OÜ",
       "category": "Logistics",
       "date": "2026-05-28",
       "due": "2026-05-29",
-      "paidDate": "",
+      "paidDate": "2026-06-01",
       "amount": 38.11,
       "vat": "",
       "notes": "",
