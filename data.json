@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-06-17T11:54:32.687Z",
+  "saved": "2026-06-17T11:55:58.628Z",
   "invoices": [
+    {
+      "id": 130,
+      "priority": "",
+      "status": "unpaid",
+      "num": "BR2353620",
+      "vendor": "VENDEN, SIA",
+      "category": "Office Supplies",
+      "date": "2026-06-01",
+      "due": "2026-06-15",
+      "paidDate": "",
+      "amount": 24.2,
+      "vat": "",
+      "notes": "",
+      "link": ""
+    },
     {
       "id": 129,
       "priority": "",
