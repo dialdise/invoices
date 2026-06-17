@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-06-17T12:00:25.685Z",
+  "saved": "2026-06-17T12:02:51.663Z",
   "invoices": [
+    {
+      "id": 132,
+      "priority": "",
+      "status": "unpaid",
+      "num": "131484",
+      "vendor": "Balti Logistika",
+      "category": "Logistics",
+      "date": "2026-06-12",
+      "due": "2026-06-12",
+      "paidDate": "2026-06-12",
+      "amount": 66.55,
+      "vat": "",
+      "notes": "",
+      "link": ""
+    },
     {
       "id": 131,
       "priority": "",
@@ -1968,7 +1983,8 @@
     "FedEx Express Latvia SIA": "Logistics",
     "SIA ProClear K": "Cleaning",
     "Stabu 10 Holding SIA": "Utilities",
-    "LEGAL BALANCE SIA": "Other"
+    "LEGAL BALANCE SIA": "Other",
+    "Balti Logistika": "Logistics"
   },
   "categories": [
     "Logistics",
