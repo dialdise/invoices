@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-06-01T12:27:32.827Z",
+  "saved": "2026-06-17T11:52:34.241Z",
   "invoices": [
+    {
+      "id": 128,
+      "priority": "",
+      "status": "unpaid",
+      "num": "2026061606",
+      "vendor": "GRIFS AG SIA",
+      "category": "Security",
+      "date": "2026-06-01",
+      "due": "2026-06-11",
+      "paidDate": "",
+      "amount": 41.14,
+      "vat": "",
+      "notes": "",
+      "link": ""
+    },
     {
       "id": 127,
       "priority": "",
