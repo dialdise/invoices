@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-06-26T08:45:11.839Z",
+  "saved": "2026-06-26T08:46:14.505Z",
   "invoices": [
     {
       "id": 134,
@@ -110,13 +110,13 @@
     {
       "id": 127,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "UR2606066",
       "vendor": "TERSUS SIA",
       "category": "Cleaning",
       "date": "2026-06-01",
       "due": "2026-06-05",
-      "paidDate": "",
+      "paidDate": "2026-06-26",
       "amount": 257.57,
       "vat": "",
       "notes": "",
