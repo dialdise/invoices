@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-06-17T12:05:36.574Z",
+  "saved": "2026-06-26T08:45:11.839Z",
   "invoices": [
     {
       "id": 134,
@@ -185,13 +185,13 @@
     {
       "id": 122,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "71141710",
       "vendor": "Lindstrom SIA",
       "category": "Cleaning",
       "date": "2026-05-18",
       "due": "2026-06-01",
-      "paidDate": "",
+      "paidDate": "2026-06-26",
       "amount": 11.28,
       "vat": "",
       "notes": "",
