@@ -333,21 +333,38 @@ thead th.sortable .sort-icon::after{content:'⇅'}
 
 /* ── UPLOAD ZONE ── */
 .upload-zone{
-  border:2px dashed var(--border);border-radius:8px;padding:20px;
+  border:2px dashed var(--border);border-radius:10px;padding:22px 16px;
   text-align:center;cursor:pointer;transition:all .2s;
-  background:var(--surface2);position:relative;
+  background:var(--surface2);position:relative;overflow:hidden;
 }
 .upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:var(--accent-light);}
 .upload-zone.has-file{border-color:var(--accent);border-style:solid;background:var(--accent-light);}
-.upload-zone-icon{font-size:24px;margin-bottom:6px}
-.upload-zone-text{font-size:12px;color:var(--text2)}
-.upload-zone-text span{color:var(--accent);font-weight:600}
-.upload-zone-filename{font-size:11px;color:var(--accent);margin-top:4px;font-family:var(--mono);font-weight:600}
+.upload-zone.uploading{border-color:var(--accent2);border-style:solid;background:var(--accent2-light);cursor:wait;pointer-events:none}
+.upload-zone.success{border-color:var(--accent);border-style:solid;background:var(--accent-light);}
+.upload-zone.error{border-color:var(--red);border-style:solid;background:var(--red-light);}
+.upload-zone-icon{font-size:28px;margin-bottom:8px;line-height:1}
+.upload-zone-text{font-size:13px;color:var(--text2);font-weight:500}
+.upload-zone-text span{color:var(--accent);font-weight:700}
+.upload-zone-filename{font-size:11px;color:var(--accent);margin-top:5px;font-family:var(--mono);font-weight:600;word-break:break-all}
+.upload-zone-sub{font-size:10px;color:var(--text3);margin-top:3px}
 .upload-progress{
-  position:absolute;bottom:0;left:0;height:3px;
-  background:var(--accent);border-radius:0 0 8px 8px;
-  width:0%;transition:width .3s;
+  position:absolute;bottom:0;left:0;height:4px;
+  background:var(--accent);border-radius:0;
+  width:0%;transition:width .4s ease;
 }
+.upload-progress.amber{background:var(--accent2)}
+/* upload result banner */
+.upload-result{
+  margin-top:10px;border-radius:8px;padding:10px 13px;
+  font-size:12px;display:none;align-items:center;gap:8px;
+  flex-wrap:wrap;
+}
+.upload-result.ok{background:var(--accent-light);border:1px solid var(--accent);color:var(--accent)}
+.upload-result.fail{background:var(--red-light);border:1px solid var(--red);color:var(--red)}
+.upload-result.warn{background:var(--accent2-light);border:1px solid var(--accent2);color:#7a5a1a}
+.upload-result-link{margin-left:auto;font-size:11px;font-weight:700;text-decoration:none;color:inherit;border:1px solid currentColor;border-radius:4px;padding:2px 7px;white-space:nowrap}
+.upload-result-link:hover{opacity:.75}
+.upload-retry-btn{margin-left:4px;font-size:11px;font-weight:700;background:none;border:1px solid currentColor;border-radius:4px;padding:2px 7px;cursor:pointer;color:inherit;font-family:var(--sans)}
 @media(max-width:900px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .report-grid{grid-template-columns:1fr}
@@ -517,19 +534,20 @@ thead th.sortable .sort-icon::after{content:'⇅'}
         </div>
         <div class="fg"><label>Notes</label><input class="fc" id="f-notes" placeholder="Any special notes" type="text"></div>
         <div class="fg">
-          <label>Invoice Document</label>
-          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('f-file').click()">
-            <div class="upload-zone-icon">📎</div>
-            <div class="upload-zone-text">Drop PDF/image or <span>browse</span></div>
+          <label>Invoice Document <span style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0">(PDF, PNG, JPG — auto-uploads to Google Drive)</span></label>
+          <div class="upload-zone" id="uploadZone" onclick="uploadZoneClick()">
+            <div class="upload-zone-icon" id="uploadZoneIcon">📎</div>
+            <div class="upload-zone-text" id="uploadZoneText">Drop PDF/image here or <span>browse files</span></div>
+            <div class="upload-zone-sub" id="uploadZoneSub">Supports PDF, PNG, JPG up to 10 MB</div>
             <div class="upload-zone-filename" id="uploadFileName"></div>
             <div class="upload-progress" id="uploadProgress"></div>
           </div>
           <input type="file" id="f-file" accept=".pdf,.png,.jpg,.jpeg" style="display:none" onchange="handleFileSelect(this)">
+          <div id="uploadResult" class="upload-result"></div>
           <div style="margin-top:8px;display:flex;align-items:center;gap:6px">
-            <span style="font-size:11px;color:var(--text3)">or paste link:</span>
+            <span style="font-size:11px;color:var(--text3);flex-shrink:0">or paste link:</span>
             <input class="fc" id="f-link" placeholder="https://… SharePoint / Drive URL" type="text" style="flex:1;font-size:12px">
           </div>
-          <div id="uploadStatus" style="font-size:11px;margin-top:5px;display:none"></div>
         </div>
         <div style="display:flex;gap:10px;margin-top:6px">
           <button class="btn btn-ghost" onclick="resetForm()" style="flex:1;justify-content:center">✕ Clear</button>
@@ -1250,16 +1268,16 @@ async function saveInvoice(){
 
   // If a file is selected, upload it to Drive via Apps Script
   if(pendingFile){
-    if(getAppsScriptUrl()){
-      try {
-        const uploadedLink = await uploadFileToDrive(pendingFile, num, vendor);
-        if(uploadedLink) link = uploadedLink;
-      } catch(e){
-        console.warn('Upload failed:', e);
-        toast('⚠️ File upload failed: '+e.message+'. Invoice saved without attachment.');
-      }
-    } else {
-      toast('⚠️ Configure Apps Script URL in Settings to upload files to Drive.');
+    try {
+      const uploadedLink = await uploadFileToDrive(pendingFile, num, vendor);
+      if(uploadedLink) link = uploadedLink;
+    } catch(e){
+      console.warn('Upload failed:', e);
+      // setUploadZoneState('error') already called inside uploadFileToDrive
+      saveBtn.disabled=false;
+      saveBtn.textContent='✓ Save Invoice';
+      toast('❌ Upload failed — fix the error above, then save again');
+      return; // don't save until upload issue is resolved
     }
   }
 
@@ -1297,16 +1315,9 @@ function resetForm(){
   document.getElementById('editId').value='';
   // Clear file upload
   pendingFile=null;
-  const zone=document.getElementById('uploadZone');
-  if(zone) zone.classList.remove('has-file','dragover');
-  const fn=document.getElementById('uploadFileName');
-  if(fn) fn.textContent='';
   const fi=document.getElementById('f-file');
   if(fi) fi.value='';
-  const us=document.getElementById('uploadStatus');
-  if(us){ us.style.display='none'; us.textContent=''; }
-  const up=document.getElementById('uploadProgress');
-  if(up) up.style.width='0%';
+  setUploadZoneState('idle');
 }
 
 function openEdit(id){
@@ -1498,11 +1509,12 @@ function exportCSV(){
 document.addEventListener('DOMContentLoaded', () => {
   const zone = document.getElementById('uploadZone');
   if(!zone) return;
-  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); if(!zone.classList.contains('uploading')) zone.classList.add('dragover'); });
   zone.addEventListener('dragleave', ()=> zone.classList.remove('dragover'));
   zone.addEventListener('drop', e=>{
     e.preventDefault();
     zone.classList.remove('dragover');
+    if(zone.classList.contains('uploading')) return;
     const f = e.dataTransfer.files[0];
     if(f) setUploadFile(f);
   });
@@ -1534,6 +1546,108 @@ function handleFileSelect(input){
   if(input.files[0]) setUploadFile(input.files[0]);
 }
 
+function uploadZoneClick(){
+  const zone = document.getElementById('uploadZone');
+  if(zone.classList.contains('uploading')) return;
+  document.getElementById('f-file').click();
+}
+
+function setUploadZoneState(state, opts={}){
+  const zone  = document.getElementById('uploadZone');
+  const icon  = document.getElementById('uploadZoneIcon');
+  const text  = document.getElementById('uploadZoneText');
+  const sub   = document.getElementById('uploadZoneSub');
+  const fname = document.getElementById('uploadFileName');
+  const prog  = document.getElementById('uploadProgress');
+  const result= document.getElementById('uploadResult');
+
+  zone.classList.remove('has-file','uploading','success','error');
+  prog.style.width='0%';
+  prog.classList.remove('amber');
+  result.style.display='none';
+  result.innerHTML='';
+
+  if(state==='idle'){
+    icon.textContent='📎';
+    text.innerHTML='Drop PDF/image here or <span>browse files</span>';
+    sub.textContent='Supports PDF, PNG, JPG up to 10 MB';
+    fname.textContent='';
+  } else if(state==='selected'){
+    zone.classList.add('has-file');
+    icon.textContent='📄';
+    text.innerHTML='<strong>'+opts.name+'</strong>';
+    sub.textContent=(opts.size/1024).toFixed(0)+' KB · will upload to Drive on save';
+    fname.textContent='';
+  } else if(state==='uploading'){
+    zone.classList.add('uploading');
+    icon.innerHTML='<span style="display:inline-block;width:24px;height:24px;border:3px solid rgba(0,0,0,.1);border-top-color:var(--accent2);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle"></span>';
+    text.textContent=opts.step||'Uploading to Google Drive…';
+    sub.textContent='Please wait, do not close this page';
+    fname.textContent='';
+    prog.classList.add('amber');
+    prog.style.width=(opts.pct||30)+'%';
+  } else if(state==='success'){
+    zone.classList.add('success');
+    icon.textContent='✅';
+    text.innerHTML='<strong>'+opts.name+'</strong>';
+    sub.textContent='Uploaded to Google Drive';
+    fname.textContent='';
+    prog.style.width='100%';
+    result.className='upload-result ok';
+    result.style.display='flex';
+    result.innerHTML='✅ Saved in Drive — '+opts.name
+      +(opts.link ? ' <a class="upload-result-link" href="'+opts.link+'" target="_blank">View file ↗</a>' : '');
+  } else if(state==='partial'){
+    zone.classList.add('success');
+    icon.textContent='⚠️';
+    text.innerHTML='<strong>'+opts.name+'</strong> uploaded';
+    sub.textContent='File is in Drive but link could not be retrieved';
+    fname.textContent='';
+    prog.style.width='100%';
+    result.className='upload-result warn';
+    result.style.display='flex';
+    result.innerHTML='File uploaded — <a class="upload-result-link" href="'+opts.folderLink+'" target="_blank">Open Drive folder ↗</a>'
+      +' <button class="upload-retry-btn" onclick="retryGetLink(\''+opts.fileName+'\')">Get link</button>';
+  } else if(state==='error'){
+    zone.classList.add('error');
+    icon.textContent='❌';
+    text.textContent='Upload failed';
+    sub.textContent=opts.msg||'Check your connection and try again';
+    fname.textContent='';
+    result.className='upload-result fail';
+    result.style.display='flex';
+    result.innerHTML=(opts.msg||'Upload to Google Drive failed')
+      +' <button class="upload-retry-btn" onclick="retryUpload()">Retry</button>';
+  }
+}
+
+async function retryUpload(){
+  if(!pendingFile) return;
+  const num    = document.getElementById('f-num').value.trim()||'INV';
+  const vendor = document.getElementById('f-vendor').value.trim()||'vendor';
+  try {
+    const link = await uploadFileToDrive(pendingFile, num, vendor);
+    if(link) document.getElementById('f-link').value = link;
+  } catch(e){
+    console.warn('Retry upload failed:', e);
+  }
+}
+
+async function retryGetLink(fileName){
+  try {
+    const searchR = await fetch(APPS_SCRIPT_URL+'?action=findFile&fileName='+encodeURIComponent(fileName)+'&folderId='+DRIVE_FOLDER_ID);
+    const d = await searchR.json();
+    if(d.fileId && d.fileId!=='undefined'){
+      const link='https://drive.google.com/file/d/'+d.fileId+'/view';
+      document.getElementById('f-link').value=link;
+      setUploadZoneState('success',{name:fileName,link});
+      toast('✅ Got Drive link!');
+    } else {
+      toast('⚠️ File not found yet — it may still be processing');
+    }
+  } catch(e){ toast('❌ Search failed: '+e.message); }
+}
+
 function setUploadFile(file){
   const allowed = ['application/pdf','image/png','image/jpeg','image/jpg'];
   if(!allowed.includes(file.type) && !file.name.match(/\.(pdf|png|jpg|jpeg)$/i)){
@@ -1541,19 +1655,7 @@ function setUploadFile(file){
     return;
   }
   pendingFile = file;
-  const zone = document.getElementById('uploadZone');
-  zone.classList.add('has-file');
-  document.getElementById('uploadFileName').textContent = '📄 ' + file.name + ' (' + (file.size/1024).toFixed(0) + ' KB)';
-  const status = document.getElementById('uploadStatus');
-  if(driveAccessToken){
-    status.style.display='block';
-    status.style.color='var(--accent)';
-    status.textContent='✅ Will upload to Google Drive on save';
-  } else {
-    status.style.display='block';
-    status.style.color='var(--accent2)';
-    status.textContent='⚠️ Configure Apps Script to enable file upload';
-  }
+  setUploadZoneState('selected', {name: file.name, size: file.size});
 }
 
 
@@ -1877,11 +1979,31 @@ async function driveLoadBackup(){
   }
 }
 
+function safeFileId(id){
+  return id && id !== 'undefined' && id !== 'null' && id !== 'NaN' && String(id).length > 5;
+}
+
+async function findFileOnDrive(fileName, retries=3, delayMs=2000){
+  for(let i=0;i<retries;i++){
+    if(i>0) await new Promise(r=>setTimeout(r,delayMs));
+    try {
+      const r = await fetch(
+        APPS_SCRIPT_URL+'?action=findFile&fileName='+encodeURIComponent(fileName)+'&folderId='+DRIVE_FOLDER_ID
+      );
+      const d = await r.json();
+      if(safeFileId(d.fileId)) return 'https://drive.google.com/file/d/'+d.fileId+'/view';
+    } catch(e){ console.warn('findFile attempt '+(i+1)+' failed:',e); }
+  }
+  return null;
+}
+
 async function uploadFileToDrive(file, invoiceNum, vendor){
-  const status=document.getElementById('uploadStatus');
-  const progress=document.getElementById('uploadProgress');
-  if(status){ status.style.display='block'; status.style.color='var(--accent2)'; status.textContent='⬆️ Uploading to Drive…'; }
-  if(progress) progress.style.width='40%';
+  const ext = file.name.split('.').pop().toLowerCase();
+  const cleanVendor = vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const cleanNum    = invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
+  const fileName    = cleanNum+'_'+cleanVendor+'.'+ext;
+
+  setUploadZoneState('uploading',{step:'Reading file…', pct:20});
 
   const base64 = await new Promise((res,rej)=>{
     const reader=new FileReader();
@@ -1889,55 +2011,52 @@ async function uploadFileToDrive(file, invoiceNum, vendor){
     reader.onerror=rej;
     reader.readAsDataURL(file);
   });
-  if(progress) progress.style.width='70%';
 
-  const ext=file.name.split('.').pop();
-  const cleanVendor=vendor.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const cleanNum=invoiceNum.replace(/[^a-zA-Z0-9]/g,'_').substring(0,20);
-  const fileName=cleanNum+'_'+cleanVendor+'.'+ext;
+  setUploadZoneState('uploading',{step:'Uploading to Google Drive…', pct:50});
 
-  // POST with text/plain avoids CORS preflight but Apps Script redirects,
-  // which causes the response body to be lost. We parse defensively.
-  const r=await fetch(APPS_SCRIPT_URL,{
-    method:'POST',
-    headers:{'Content-Type':'text/plain'},
-    body:JSON.stringify({action:'uploadFile',fileName,mimeType:file.type||'application/pdf',base64,folderId:DRIVE_FOLDER_ID})
-  });
-  if(progress) progress.style.width='85%';
+  let uploadOk = false;
+  let viewLink  = null;
 
-  let viewLink = null;
-
-  // Try to parse the response for the fileId
   try {
-    const text = await r.text();
-    const result = JSON.parse(text);
-    // Guard: only use fileId if it's a real value (not 'undefined', 'null', empty)
-    const safeId = result.fileId && result.fileId !== 'undefined' && result.fileId !== 'null' && result.fileId.length > 5;
-    if(result.viewLink && !result.viewLink.includes('/undefined')) viewLink = result.viewLink;
-    else if(safeId) viewLink = 'https://drive.google.com/file/d/'+result.fileId+'/view';
-  } catch(e){ /* response couldn't be parsed — file still uploaded */ }
+    const r = await fetch(APPS_SCRIPT_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({action:'uploadFile',fileName,mimeType:file.type||'application/pdf',base64,folderId:DRIVE_FOLDER_ID})
+    });
+    uploadOk = r.ok || r.status===0; // status 0 = no-cors opaque response (upload likely succeeded)
 
-  // If we didn't get a fileId back, search Drive for the file by name
-  if(!viewLink){
-    if(progress) progress.style.width='92%';
+    // Try to parse the response body for the fileId
     try {
-      const searchR = await fetch(
-        APPS_SCRIPT_URL+'?action=findFile&fileName='+encodeURIComponent(fileName)+'&folderId='+DRIVE_FOLDER_ID
-      );
-      const searchData = await searchR.json();
-      if(searchData.fileId && searchData.fileId !== 'undefined'){
-        viewLink = 'https://drive.google.com/file/d/'+searchData.fileId+'/view';
-      }
-    } catch(e){ console.warn('File search failed:', e); }
+      const text = await r.text();
+      const result = JSON.parse(text);
+      if(result.viewLink && !result.viewLink.includes('/undefined') && !result.viewLink.includes('/null'))
+        viewLink = result.viewLink;
+      else if(safeFileId(result.fileId))
+        viewLink = 'https://drive.google.com/file/d/'+result.fileId+'/view';
+    } catch(e){ /* redirect swallowed body — fall through to findFile */ }
+  } catch(e){
+    // Network error — throw so caller can show error state
+    setUploadZoneState('error',{msg:'Network error: '+e.message});
+    throw e;
   }
 
-  // Last resort: link to the folder itself so user can find the file
-  if(!viewLink) viewLink = 'https://drive.google.com/drive/folders/'+DRIVE_FOLDER_ID;
+  // If upload response didn't give us a usable link, poll Drive by filename (up to 3 attempts)
+  if(!viewLink){
+    setUploadZoneState('uploading',{step:'Getting file link from Drive…', pct:75});
+    viewLink = await findFileOnDrive(fileName, 3, 2000);
+  }
 
-  if(progress) progress.style.width='100%';
-  document.getElementById('f-link').value=viewLink;
-  if(status){ status.style.color='var(--accent)'; status.textContent='✅ Uploaded: '+fileName; }
-  return viewLink;
+  if(viewLink){
+    document.getElementById('f-link').value = viewLink;
+    setUploadZoneState('success',{name:fileName, link:viewLink});
+  } else {
+    // File was uploaded (Apps Script didn't error) but we couldn't retrieve the link
+    const folderLink = 'https://drive.google.com/drive/folders/'+DRIVE_FOLDER_ID;
+    document.getElementById('f-link').value = folderLink;
+    setUploadZoneState('partial',{name:fileName, fileName, folderLink});
+  }
+
+  return viewLink || 'https://drive.google.com/drive/folders/'+DRIVE_FOLDER_ID;
 }
 
 // Stubs for removed OAuth functions
