@@ -1,7 +1,22 @@
 {
   "version": 2,
-  "saved": "2026-07-30T09:10:32.880Z",
+  "saved": "2026-07-30T09:12:32.684Z",
   "invoices": [
+    {
+      "id": 144,
+      "priority": "",
+      "status": "paid",
+      "num": "131899",
+      "vendor": "Balti Logistika",
+      "category": "Logistics",
+      "date": "2026-07-16",
+      "due": "2026-07-17",
+      "paidDate": "",
+      "amount": 85,
+      "vat": "",
+      "notes": "",
+      "link": ""
+    },
     {
       "id": 143,
       "priority": "",
