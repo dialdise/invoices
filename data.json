@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "saved": "2026-07-30T09:13:52.642Z",
+  "saved": "2026-08-06T11:15:47.753Z",
   "invoices": [
     {
       "id": 145,
@@ -65,13 +65,13 @@
     {
       "id": 141,
       "priority": "",
-      "status": "unpaid",
+      "status": "paid",
       "num": "PPD2128703",
       "vendor": "LATVIJAS PASTS VAS",
       "category": "Postal",
       "date": "2026-06-30",
       "due": "2026-07-19",
-      "paidDate": "",
+      "paidDate": "2026-08-06",
       "amount": 55.97,
       "vat": "",
       "notes": "",
